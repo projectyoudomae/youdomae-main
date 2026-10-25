@@ -1,5 +1,5 @@
-import { createSession, createUserId, json } from "../../lib/auth.js";
-import { getDatabase } from "../../../lib/posts.js";
+import { createSession, createUserId } from "../../lib/auth.js";
+import { getDatabase, json } from "../../../lib/posts.js";
 
 export const onRequestPost = async (context) => {
   const { db, error } = getDatabase(context);
