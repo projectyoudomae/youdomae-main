@@ -385,7 +385,6 @@
         <div class="modal-head"><h2 id="ad-title">배너 광고 문의</h2><button class="close-button" id="close-ad-modal" type="button" aria-label="닫기">×</button></div>
         <p class="field-hint">문의 내용을 보내주시면 광고 안내를 위해 연락드리겠습니다.</p>
         <form id="ad-form">
-          <div class="field"><label for="ad-name">이름 또는 업체명</label><input id="ad-name" name="name" maxlength="80" required autocomplete="name" /></div>
           <div class="field"><label for="ad-email">회신받을 이메일</label><input id="ad-email" name="email" type="email" maxlength="254" required autocomplete="email" /></div>
           <div class="field"><label for="ad-message">문의 내용</label><textarea id="ad-message" name="message" maxlength="2000" required placeholder="희망하는 광고 기간이나 배너 위치 등을 적어주세요."></textarea><span class="field-hint">최대 2,000자</span></div>
           <div class="honeypot" aria-hidden="true"><label for="ad-website">Website</label><input id="ad-website" name="website" tabindex="-1" autocomplete="off" /></div>
@@ -961,7 +960,6 @@
               method: "POST",
               headers: { "content-type": "application/json" },
               body: JSON.stringify({
-                name: $("#ad-name").value.trim(),
                 email: $("#ad-email").value.trim(),
                 message: $("#ad-message").value.trim(),
                 website: $("#ad-website").value.trim(),

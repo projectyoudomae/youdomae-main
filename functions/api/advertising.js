@@ -29,11 +29,9 @@ export const onRequestPost = async (context) => {
     return json({ ok: true });
   }
 
-  const name = typeof value?.name === "string" ? value.name.trim() : "";
   const email = typeof value?.email === "string" ? value.email.trim() : "";
   const message = typeof value?.message === "string" ? value.message.trim() : "";
   if (
-    !name || name.length > 80 || /[\u0000-\u001f\u007f]/.test(name) ||
     email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
     !message || message.length > 2000
   ) {
@@ -78,8 +76,8 @@ export const onRequestPost = async (context) => {
         from: ADS_FROM_EMAIL,
         to: [CONTACT_EMAIL],
         reply_to: email,
-        subject: `[모여] 배너 광고 문의 - ${name}`,
-        text: `이름 또는 업체명: ${name}\n회신 이메일: ${email}\n\n문의 내용:\n${message}`,
+        subject: `[모여] 배너 광고 문의 - ${email}`,
+        text: `회신 이메일: ${email}\n\n문의 내용:\n${message}`,
       }),
     });
   } catch (error) {
