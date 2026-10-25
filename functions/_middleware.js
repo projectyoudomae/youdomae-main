@@ -10,7 +10,7 @@ export const onRequest = async (context) => {
   } catch (error) {
     console.error("Cloudflare Pages Function failed.", error);
 
-    if (/no such table:\s*(users|sessions|posts)/i.test(String(error?.message))) {
+    if (/no such table:\s*(users|sessions|posts|featured_posts|advertising_rate_limits)/i.test(String(error?.message))) {
       return jsonError("D1 tables are missing. Apply the current schema.sql to the bound DB database.", 503);
     }
 

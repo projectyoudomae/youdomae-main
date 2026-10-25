@@ -106,6 +106,8 @@
       .feed-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 2px 12px; }
       .feed-title { margin: 0; font-size: 17px; letter-spacing: -.03em; }
       .sort-select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; outline: none; background: white; color: #707286; font-size: 11px; }
+      .ad-inquiry-button { flex: 0 0 auto; padding: 8px 10px; border: 1px solid #f0c78c; border-radius: 9px; background: linear-gradient(110deg, #fff7e9, #fff0dc); color: #995817; cursor: pointer; font-size: 11px; font-weight: 750; }
+      .ad-inquiry-button:hover { border-color: #e8a84d; box-shadow: 0 3px 12px #e8a84d29; }
       .composer { display: flex; align-items: center; gap: 11px; margin-bottom: 12px; padding: 13px; cursor: pointer; }
       .anonymous-avatar { display: grid; flex: 0 0 38px; width: 38px; height: 38px; place-items: center; border-radius: 14px; background: #f0eeff; font-size: 18px; }
       .composer-prompt { flex: 1; padding: 11px 13px; border: 1px solid #ededf2; border-radius: 10px; color: #9a9bad; font-size: 12px; transition: border-color .2s ease, box-shadow .2s ease; }
@@ -124,6 +126,7 @@
       .post-menu { margin-left: auto; border: 0; background: transparent; color: #9799a9; cursor: pointer; font-size: 18px; }
       .post.popular-post { border-color: #ff9b47; background: linear-gradient(145deg, #fff8ed, var(--paper) 68%); box-shadow: 0 8px 30px #f28a251c, 0 0 0 1px #ffb35b3b; }
       .popular-badge { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 4px; margin-left: auto; padding: 5px 9px; border: 1px solid #ffbd68; border-radius: 999px; background: linear-gradient(110deg, #fff0d5, #ffe2c2); color: #a84b10; font-size: 10px; font-weight: 850; box-shadow: 0 2px 10px #ed79252b; }
+      .popular-countdown { display: block; margin-top: 3px; color: #a84b10; font-size: 9px; font-weight: 750; white-space: nowrap; }
       .popular-badge + .post-menu { margin-left: 0; }
       .post-category { display: inline-flex; margin: 13px 0 7px; padding: 4px 8px; border: 1px solid #806cff18; border-radius: 6px; background: linear-gradient(100deg, #f2f1ff, #f1fbf8); color: #6e61ca; font-size: 10px; font-weight: 750; }
       .post h2 { margin: 0; font-size: 15px; line-height: 1.5; letter-spacing: -.02em; }
@@ -172,6 +175,8 @@
       :root[data-theme="dark"] .icon-button:hover { border-color: #8d7bff; color: #c0b6ff; box-shadow: 0 0 16px #806cff42; }
       :root[data-theme="dark"] .post.popular-post { border-color: #ad6429; background: linear-gradient(145deg, #382719, var(--paper) 72%); box-shadow: 0 8px 30px #f28a251c, 0 0 0 1px #ffb35b24; }
       :root[data-theme="dark"] .popular-badge { border-color: #a85f2a; background: linear-gradient(110deg, #50351e, #47271f); color: #ffc17b; box-shadow: 0 2px 12px #ed79252b; }
+      :root[data-theme="dark"] .popular-countdown { color: #ffc17b; }
+      :root[data-theme="dark"] .ad-inquiry-button { border-color: #805830; background: linear-gradient(110deg, #352819, #38251d); color: #ffd094; }
       :root[data-theme="dark"] .nav-card,
       :root[data-theme="dark"] .side-card,
       :root[data-theme="dark"] .composer,
@@ -241,6 +246,7 @@
       :root[data-theme="dark"] .privacy-pill { color: #8ce8c8; }
       .modal-backdrop { position: fixed; z-index: 10; inset: 0; display: grid; place-items: center; padding: 18px; background: #19182c80; }
       .modal { width: min(500px, 100%); max-height: min(90vh, 700px); overflow: auto; padding: 22px; border-radius: 18px; background: white; box-shadow: 0 24px 80px #0003; }
+      .honeypot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
       .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 17px; }
       .modal-head h2 { margin: 0; font-size: 18px; }
       .close-button { width: 32px; height: 32px; border: 0; border-radius: 9px; background: #f4f4f8; cursor: pointer; }
@@ -323,6 +329,7 @@
         <section class="main-feed" aria-label="게시글">
           <div class="feed-head">
             <h2 class="feed-title" id="feed-title">전체 이야기</h2>
+            <button class="ad-inquiry-button" id="ad-inquiry-button" type="button">📣 배너 광고 문의</button>
             <label><span class="sr-only">정렬 방법</span><select class="sort-select" id="sort-select"><option value="recent">최신순</option><option value="popular">공감순</option></select></label>
           </div>
           <div class="search-box"><span aria-hidden="true">⌕</span><label class="sr-only" for="search">게시글 검색</label><input id="search" type="search" placeholder="궁금한 이야기를 찾아보세요" autocomplete="off" /></div>
@@ -370,6 +377,19 @@
           <div class="field hidden" id="auth-nickname-field"><label for="auth-nickname">표시 닉네임</label><input id="auth-nickname" maxlength="20" autocomplete="nickname" placeholder="게시글에 표시될 이름" /></div>
           <div class="field"><label for="auth-password">비밀번호</label><input id="auth-password" minlength="6" maxlength="64" required type="password" autocomplete="current-password" placeholder="6자 이상" /><span class="field-hint">계정 정보는 서버 데이터베이스에 안전하게 저장됩니다.</span></div>
           <div class="auth-actions"><button class="primary" id="auth-submit" type="submit">로그인</button></div>
+        </form>
+      </section>
+    </div>
+    <div class="modal-backdrop hidden" id="ad-modal" role="presentation">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="ad-title">
+        <div class="modal-head"><h2 id="ad-title">배너 광고 문의</h2><button class="close-button" id="close-ad-modal" type="button" aria-label="닫기">×</button></div>
+        <p class="field-hint">문의 내용을 보내주시면 광고 안내를 위해 연락드리겠습니다.</p>
+        <form id="ad-form">
+          <div class="field"><label for="ad-name">이름 또는 업체명</label><input id="ad-name" name="name" maxlength="80" required autocomplete="name" /></div>
+          <div class="field"><label for="ad-email">회신받을 이메일</label><input id="ad-email" name="email" type="email" maxlength="254" required autocomplete="email" /></div>
+          <div class="field"><label for="ad-message">문의 내용</label><textarea id="ad-message" name="message" maxlength="2000" required placeholder="희망하는 광고 기간이나 배너 위치 등을 적어주세요."></textarea><span class="field-hint">최대 2,000자</span></div>
+          <div class="honeypot" aria-hidden="true"><label for="ad-website">Website</label><input id="ad-website" name="website" tabindex="-1" autocomplete="off" /></div>
+          <div class="modal-footer"><p>문의 내용은 광고 상담 목적으로만 이메일로 전달됩니다.</p><button class="primary" id="ad-submit" type="submit">문의 보내기</button></div>
         </form>
       </section>
     </div>
@@ -464,6 +484,9 @@
         let selectedVideoUrl = "";
         const postVideoUrls = new Map();
         let toastTimer;
+        let popularityRefreshAt = 0;
+        let popularityRefreshPromise = null;
+        let popularCountdownTimer = null;
         const VIDEO_DB_NAME = "moyeo-anon-video-v1";
         const openVideoDb = () => new Promise((resolve, reject) => {
           const request = indexedDB.open(VIDEO_DB_NAME, 1);
@@ -609,9 +632,11 @@
             posts = sharedPosts.map((post) => ({ ...post, liked: likedIds.has(post.id) }));
             save();
             render();
+            return true;
           } catch (error) {
             console.error("공유 게시글을 불러오지 못했습니다.", error);
             showToast("공유 서버에 연결하지 못했어요. 게시글이 다른 사람에게 보이지 않을 수 있습니다.");
+            return false;
           }
         };
         const showToast = (message) => {
@@ -646,18 +671,55 @@
           const days = Math.floor(hours / 24);
           return days < 7 ? `${days}일 전` : new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric" }).format(timestamp);
         };
-        const mostPopularPost = () => posts.reduce((popular, post) =>
-          post.likes > (popular?.likes ?? 0) ? post : popular, null);
+        const formatRemaining = (milliseconds) => {
+          const seconds = Math.max(0, Math.ceil(milliseconds / 1000));
+          const hours = Math.floor(seconds / 3600);
+          const minutes = Math.floor((seconds % 3600) / 60);
+          return `${hours}시간 ${String(minutes).padStart(2, "0")}분 ${String(seconds % 60).padStart(2, "0")}초 남음`;
+        };
+        const updatePopularCountdowns = () => {
+          const now = Date.now();
+          const expired = posts.some((post) =>
+            Number.isFinite(post.popularUntil) && post.popularUntil > 0 && post.popularUntil <= now,
+          );
+          document.querySelectorAll("[data-popular-until]").forEach((countdown) => {
+            const remaining = Number(countdown.dataset.popularUntil) - now;
+            if (remaining <= 0) {
+              countdown.textContent = "인기글 갱신 중";
+            } else {
+              countdown.textContent = formatRemaining(remaining);
+            }
+          });
+          if (expired && !popularityRefreshPromise && now - popularityRefreshAt >= 30000) {
+            popularityRefreshAt = now;
+            popularityRefreshPromise = syncSharedPosts().finally(() => {
+              popularityRefreshPromise = null;
+            });
+          }
+        };
+        const startPopularCountdown = () => {
+          updatePopularCountdowns();
+          const hasPopularityWindow = posts.some((post) =>
+            Number.isFinite(post.popularUntil) && post.popularUntil > 0,
+          );
+          if (!popularCountdownTimer && hasPopularityWindow) {
+            popularCountdownTimer = setInterval(updatePopularCountdowns, 1000);
+          } else if (popularCountdownTimer && !hasPopularityWindow) {
+            clearInterval(popularCountdownTimer);
+            popularCountdownTimer = null;
+          }
+        };
         const visiblePosts = () => {
           const normalized = query.trim().toLocaleLowerCase("ko");
           const filtered = posts.filter((post) =>
             (activeCategory === "all" || post.category === activeCategory) &&
             (!normalized || `${post.title} ${post.body} ${categoryName(post.category)}`.toLocaleLowerCase("ko").includes(normalized)),
           );
-          const popularPost = mostPopularPost();
+          const now = Date.now();
           return filtered.sort((a, b) => {
-            if (a.id === popularPost?.id) return -1;
-            if (b.id === popularPost?.id) return 1;
+            const aIsPopular = Number(a.popularUntil) > now;
+            const bIsPopular = Number(b.popularUntil) > now;
+            if (aIsPopular !== bIsPopular) return aIsPopular ? -1 : 1;
             return sortMode === "popular"
               ? b.likes - a.likes || b.createdAt - a.createdAt
               : b.createdAt - a.createdAt;
@@ -743,17 +805,18 @@
           postVideoUrls.clear();
           feed.replaceChildren();
           const results = visiblePosts();
-          const popularPost = mostPopularPost();
+          const now = Date.now();
           if (!results.length) {
             const empty = document.createElement("div");
             empty.className = "empty";
             empty.innerHTML = "<strong>아직 이야기가 없어요</strong>첫 이야기를 익명으로 남겨보세요.";
             feed.append(empty);
+            startPopularCountdown();
             return;
           }
           for (const post of results) {
             const article = document.createElement("article");
-            const isPopular = post.id === popularPost?.id;
+            const isPopular = Number(post.popularUntil) > now;
             article.className = `post${isPopular ? " popular-post" : ""}`;
             article.id = `post-${post.id}`;
             const comments = post.comments.map((comment) => `<div class="comment"><span class="comment-mark" aria-hidden="true">↳</span><div class="comment-body"><strong>익명</strong>${esc(comment.body)}</div></div>`).join("");
@@ -761,7 +824,7 @@
               <div class="post-top">
                 <span class="post-avatar" aria-hidden="true">☻</span>
                 <div><div class="post-author">${esc(post.nickname || "익명")}${post.nickname === ADMIN_ID ? '<span class="admin-badge">관리자</span>' : ""}</div><div class="post-time">${timeAgo(post.createdAt)}</div></div>
-                ${isPopular ? '<span class="popular-badge" aria-label="공감이 가장 많은 인기글"><span aria-hidden="true">🔥</span> 인기글</span>' : ""}
+                ${isPopular ? `<span class="popular-badge" aria-label="공감이 가장 많은 인기글"><span aria-hidden="true">🔥</span> 인기글<span class="popular-countdown" data-popular-until="${post.popularUntil}"></span></span>` : ""}
                 <button class="post-menu" type="button" data-action="${post.authorId === ownerId || currentUser?.isAdmin ? "delete" : "report"}" data-id="${esc(post.id)}" aria-label="${post.authorId === ownerId || currentUser?.isAdmin ? "게시글 삭제" : "게시글 신고"}">${post.authorId === ownerId || currentUser?.isAdmin ? "삭제" : "···"}</button>
               </div>
               <span class="post-category">${esc(categoryName(post.category))}</span>
@@ -791,6 +854,7 @@
               console.error("게시글 동영상을 불러오지 못했습니다.", error);
             }
           });
+          startPopularCountdown();
         };
         const render = () => {
           renderCategories();
@@ -885,6 +949,34 @@
         };
         $("#new-post").addEventListener("click", openModal);
         $("#new-post-top").addEventListener("click", openModal);
+        $("#ad-inquiry-button").addEventListener("click", openAdModal);
+        $("#close-ad-modal").addEventListener("click", closeAdModal);
+        $("#ad-modal").addEventListener("click", (event) => { if (event.target === $("#ad-modal")) closeAdModal(); });
+        $("#ad-form").addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const submit = $("#ad-submit");
+          submit.disabled = true;
+          try {
+            const response = await fetch("/api/advertising", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                name: $("#ad-name").value.trim(),
+                email: $("#ad-email").value.trim(),
+                message: $("#ad-message").value.trim(),
+                website: $("#ad-website").value.trim(),
+              }),
+            });
+            await readApiResponse(response, "광고 문의");
+            closeAdModal();
+            showToast("광고 문의를 보냈어요. 확인 후 회신드리겠습니다.");
+          } catch (error) {
+            console.error("광고 문의를 보내지 못했습니다.", error);
+            showToast(`문의 메일을 보내지 못했어요. ${error.message}`);
+          } finally {
+            submit.disabled = false;
+          }
+        });
         $("#theme-toggle").addEventListener("click", () => {
           applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
         });
@@ -895,6 +987,14 @@
         const closeAuthModal = () => {
           $("#auth-modal").classList.add("hidden");
           $("#auth-form").reset();
+        };
+        const openAdModal = () => {
+          $("#ad-modal").classList.remove("hidden");
+          $("#ad-name").focus();
+        };
+        const closeAdModal = () => {
+          $("#ad-modal").classList.add("hidden");
+          $("#ad-form").reset();
         };
         const setAuthMode = (mode) => {
           authMode = mode;
@@ -1031,6 +1131,7 @@
           if (event.key !== "Escape") return;
           if (!$("#post-modal").classList.contains("hidden")) closeModal();
           if (!$("#auth-modal").classList.contains("hidden")) closeAuthModal();
+          if (!$("#ad-modal").classList.contains("hidden")) closeAdModal();
         });
         $("#feed").addEventListener("click", async (event) => {
           const button = event.target.closest("button[data-action]");
@@ -1046,8 +1147,10 @@
                 body: JSON.stringify({ delta: post.liked ? 1 : -1 }),
               });
               post.likes = updatedPost.likes;
-              save();
-              render();
+              if (!await syncSharedPosts()) {
+                save();
+                render();
+              }
             } catch (error) {
               post.liked = previousLiked;
               console.error("공감을 저장하지 못했습니다.", error);

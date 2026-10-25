@@ -1,5 +1,6 @@
 import { getDatabase, getPost, json, readJson, toPost, validatePost } from "../../lib/posts.js";
 import { authenticate } from "../lib/auth.js";
+import { getFeaturedPost } from "../lib/popular.js";
 
 export const onRequestGet = async (context) => {
   const { db, error } = getDatabase(context);
@@ -8,7 +9,11 @@ export const onRequestGet = async (context) => {
   const { results } = await db.prepare(
     "SELECT * FROM posts ORDER BY created_at DESC",
   ).all();
-  return json(results.map(toPost));
+  const featured = await getFeaturedPost(db);
+  return json(results.map((post) => ({
+    ...toPost(post),
+    popularUntil: post.id === featured?.postId ? featured.expiresAt : null,
+  })));
 };
 
 export const onRequestPost = async (context) => {

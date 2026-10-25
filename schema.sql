@@ -13,6 +13,18 @@ CREATE TABLE IF NOT EXISTS posts (
 
 CREATE INDEX IF NOT EXISTS posts_created_at_idx ON posts (created_at DESC);
 
+CREATE TABLE IF NOT EXISTS featured_posts (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  post_id TEXT NOT NULL,
+  featured_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS advertising_rate_limits (
+  ip_hash TEXT PRIMARY KEY,
+  last_submitted_at INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   login_name TEXT UNIQUE,

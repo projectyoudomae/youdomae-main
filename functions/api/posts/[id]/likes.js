@@ -1,4 +1,5 @@
 import { getDatabase, getPost, json, readJson, toPost } from "../../../../lib/posts.js";
+import { getFeaturedPost } from "../../../lib/popular.js";
 
 export const onRequestPost = async (context) => {
   const { db, error } = getDatabase(context);
@@ -16,5 +17,9 @@ export const onRequestPost = async (context) => {
   if (!result.meta.changes) return json({ error: "Post not found." }, 404);
 
   const post = await getPost(db, context.params.id);
-  return json(toPost(post));
+  const featured = await getFeaturedPost(db, true);
+  return json({
+    ...toPost(post),
+    popularUntil: post.id === featured?.postId ? featured.expiresAt : null,
+  });
 };
