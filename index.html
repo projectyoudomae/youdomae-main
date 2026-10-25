@@ -534,13 +534,18 @@
               ...options.headers,
             },
           });
+          return readApiResponse(response, "공유 서버");
+        };
+        const readApiResponse = async (response, serviceName) => {
+          const body = await response.text();
           let data;
           try {
-            data = await response.json();
+            data = JSON.parse(body);
           } catch {
-            throw new Error("공유 서버에서 올바른 응답을 받지 못했습니다.");
+            const detail = body.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);
+            throw new Error(`${serviceName}가 JSON이 아닌 응답을 반환했습니다 (HTTP ${response.status}).${detail ? ` ${detail}` : ""}`);
           }
-          if (!response.ok) throw new Error(data.error || "공유 서버 요청에 실패했습니다.");
+          if (!response.ok) throw new Error(data.error || `${serviceName} 요청에 실패했습니다 (HTTP ${response.status}).`);
           return data;
         };
         const requestAuthApi = async (path, options = {}) => {
@@ -552,14 +557,7 @@
               ...options.headers,
             },
           });
-          let data;
-          try {
-            data = await response.json();
-          } catch {
-            throw new Error("인증 서버에서 올바른 응답을 받지 못했습니다.");
-          }
-          if (!response.ok) throw new Error(data.error || "인증 서버 요청에 실패했습니다.");
-          return data;
+          return readApiResponse(response, "인증 서버");
         };
         const applyIdentity = (user) => {
           currentUser = user.isAnonymous ? null : user;
