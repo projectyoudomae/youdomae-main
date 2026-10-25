@@ -66,20 +66,30 @@ export const onRequestPost = async (context) => {
     return json({ error: "문의는 10분에 한 번씩 보낼 수 있습니다." }, 429);
   }
 
-  const emailResponse = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${RESEND_API_KEY}`,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      from: ADS_FROM_EMAIL,
-      to: [CONTACT_EMAIL],
-      reply_to: email,
-      subject: `[모여] 배너 광고 문의 - ${name}`,
-      text: `이름 또는 업체명: ${name}\n회신 이메일: ${email}\n\n문의 내용:\n${message}`,
-    }),
-  });
+  let emailResponse;
+  try {
+    emailResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${RESEND_API_KEY}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        from: ADS_FROM_EMAIL,
+        to: [CONTACT_EMAIL],
+        reply_to: email,
+        subject: `[모여] 배너 광고 문의 - ${name}`,
+        text: `이름 또는 업체명: ${name}\n회신 이메일: ${email}\n\n문의 내용:\n${message}`,
+      }),
+    });
+  } catch (error) {
+    console.error("Could not reach Resend for an advertising inquiry.", error);
+    await db.prepare(`
+      DELETE FROM advertising_rate_limits
+      WHERE ip_hash = ? AND last_submitted_at = ?
+    `).bind(ipHash, now).run();
+    return json({ error: "메일 서비스에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요." }, 502);
+  }
   if (!emailResponse.ok) {
     console.error("Resend rejected an advertising inquiry.", emailResponse.status);
     await db.prepare(`
