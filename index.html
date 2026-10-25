@@ -442,6 +442,8 @@
         let authMode = "login";
         let currentUser = null;
         let authToken = "";
+        let identityReady = Promise.resolve(false);
+        let sharedPostsReady = Promise.resolve(false);
         try {
           authToken = localStorage.getItem(SESSION_KEY) || "";
         } catch (error) {
@@ -599,32 +601,34 @@
           try {
             let sharedPosts = await requestPostsApi();
             if (localStorage.getItem(MIGRATION_KEY) !== "1") {
-              const sharedIds = new Set(sharedPosts.map((post) => post.id));
-              let migrationSucceeded = true;
-              for (const post of cachedPosts) {
-                if (sharedIds.has(post.id)) continue;
-                try {
-                  await requestPostsApi("", {
-                    method: "POST",
-                    body: JSON.stringify({
-                      ...post,
-                      authorId: post.authorId || ownerId,
-                      nickname: post.nickname || "",
-                      image: post.image || "",
-                      comments: post.comments.map((comment) => ({
-                        ...comment,
-                        id: comment.id || `comment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                        createdAt: Number.isSafeInteger(comment.createdAt) ? comment.createdAt : Date.now(),
-                      })),
-                    }),
-                  });
-                } catch (error) {
-                  migrationSucceeded = false;
-                  console.error(`기존 게시글 ${post.id}을 공유 서버로 옮기지 못했습니다.`, error);
-                  showToast("일부 기존 게시글을 공유하지 못했어요. 사진 크기나 서버 설정을 확인해 주세요.");
+              if (await identityReady) {
+                const sharedIds = new Set(sharedPosts.map((post) => post.id));
+                let migrationSucceeded = true;
+                for (const post of cachedPosts) {
+                  if (sharedIds.has(post.id)) continue;
+                  try {
+                    await requestPostsApi("", {
+                      method: "POST",
+                      body: JSON.stringify({
+                        ...post,
+                        authorId: post.authorId || ownerId,
+                        nickname: post.nickname || "",
+                        image: post.image || "",
+                        comments: post.comments.map((comment) => ({
+                          ...comment,
+                          id: comment.id || `comment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                          createdAt: Number.isSafeInteger(comment.createdAt) ? comment.createdAt : Date.now(),
+                        })),
+                      }),
+                    });
+                  } catch (error) {
+                    migrationSucceeded = false;
+                    console.error(`기존 게시글 ${post.id}을 공유 서버로 옮기지 못했습니다.`, error);
+                    showToast("일부 기존 게시글을 공유하지 못했어요. 사진 크기나 서버 설정을 확인해 주세요.");
+                  }
                 }
+                if (migrationSucceeded) localStorage.setItem(MIGRATION_KEY, "1");
               }
-              if (migrationSucceeded) localStorage.setItem(MIGRATION_KEY, "1");
             }
             sharedPosts = await requestPostsApi();
             const likedIds = new Set(posts.filter((post) => post.liked).map((post) => post.id));
@@ -908,6 +912,11 @@
         });
         const addPost = async (event) => {
           event.preventDefault();
+          if (!await identityReady) {
+            showToast("익명 세션을 연결하지 못했어요. 잠시 후 페이지를 새로고침해 주세요.");
+            return;
+          }
+          await sharedPostsReady;
           const title = $("#post-title").value.trim();
           const body = $("#post-body").value.trim();
           const category = $("#post-category").value;
@@ -1225,12 +1234,14 @@
         applyTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light", false);
         renderAccountButton();
         render();
-        initializeIdentity()
-          .then(syncSharedPosts)
+        identityReady = initializeIdentity()
+          .then(() => true)
           .catch((error) => {
             console.error("공유 서비스에 연결하지 못했습니다.", error);
             showToast(`서버에 연결하지 못했어요. ${error.message}`);
+            return false;
           });
+        sharedPostsReady = syncSharedPosts();
       })();
     </script>
   </body>
