@@ -368,7 +368,7 @@
           <div class="field"><label for="post-body">내용</label><textarea id="post-body" maxlength="2000" required placeholder="편하게 적어주세요. 이름, 연락처, 주소 등 개인정보는 작성하지 마세요."></textarea><span class="field-hint">최대 2,000자</span></div>
           <div class="field"><label for="post-image">사진</label><label class="image-picker" id="image-picker" for="post-image"><span id="image-picker-text">사진을 선택하세요<br /><small>JPG, PNG, WEBP · 최대 5MB</small></span><input id="post-image" type="file" accept="image/jpeg,image/png,image/webp" /></label><div class="image-preview hidden" id="image-preview"><img id="image-preview-source" alt="선택한 사진 미리보기" /><button class="remove-image" id="remove-image" type="button" aria-label="선택한 사진 삭제">×</button></div></div>
           <div class="field"><label for="post-video">동영상</label><label class="image-picker" id="video-picker" for="post-video"><span>동영상을 선택하세요<br /><small>MP4, WEBM · 최대 50MB</small></span><input id="post-video" type="file" accept="video/mp4,video/webm" /></label><div class="image-preview hidden" id="video-preview"><video id="video-preview-source" class="video-preview" controls muted preload="metadata"></video><div class="video-preview-actions"><button class="remove-image" id="remove-video" type="button" aria-label="선택한 동영상 삭제">×</button></div></div></div>
-          <div class="modal-footer"><p>작성한 글과 사진은 이 브라우저에 저장됩니다. 실제 공개되지 않아요.</p><button class="primary" type="submit">등록</button></div>
+          <div class="modal-footer"><p>글과 사진은 다른 사람에게도 공개됩니다. 동영상은 작성한 브라우저에서만 볼 수 있어요.</p><button class="primary" type="submit">등록</button></div>
         </form>
       </section>
     </div>
@@ -390,6 +390,7 @@
         "use strict";
         const STORAGE_KEY = "moyeo-anon-community-v1";
         const OWNER_KEY = "moyeo-anon-community-owner-v1";
+        const MIGRATION_KEY = "moyeo-anon-community-d1-migrated-v1";
         const THEME_KEY = "moyeo-anon-theme-v1";
         const USERS_KEY = "moyeo-anon-users-v1";
         const SESSION_KEY = "moyeo-anon-session-v1";
@@ -474,6 +475,15 @@
           }
         };
         let posts = loadPosts();
+        const hasCachedPosts = (() => {
+          try {
+            return localStorage.getItem(STORAGE_KEY) !== null;
+          } catch (error) {
+            console.error("기존 게시글 저장 상태를 확인하지 못했습니다.", error);
+            return false;
+          }
+        })();
+        const cachedPosts = hasCachedPosts ? posts : [];
         let activeCategory = "all";
         let query = "";
         let sortMode = "recent";
@@ -530,6 +540,61 @@
             console.error("커뮤니티 글을 저장하지 못했습니다.", error);
             showToast("브라우저 저장 공간이 부족해 변경사항을 저장하지 못했어요. 더 작은 사진을 선택해 주세요.");
             return false;
+          }
+        };
+        const requestPostsApi = async (path = "", options = {}) => {
+          const response = await fetch(`/api/posts${path}`, {
+            ...options,
+            headers: { "content-type": "application/json", ...options.headers },
+          });
+          let data;
+          try {
+            data = await response.json();
+          } catch {
+            throw new Error("공유 서버에서 올바른 응답을 받지 못했습니다.");
+          }
+          if (!response.ok) throw new Error(data.error || "공유 서버 요청에 실패했습니다.");
+          return data;
+        };
+        const syncSharedPosts = async () => {
+          try {
+            let sharedPosts = await requestPostsApi();
+            if (localStorage.getItem(MIGRATION_KEY) !== "1") {
+              const sharedIds = new Set(sharedPosts.map((post) => post.id));
+              let migrationSucceeded = true;
+              for (const post of cachedPosts) {
+                if (sharedIds.has(post.id)) continue;
+                try {
+                  await requestPostsApi("", {
+                    method: "POST",
+                    body: JSON.stringify({
+                      ...post,
+                      authorId: post.authorId || ownerId,
+                      nickname: post.nickname || "",
+                      image: post.image || "",
+                      comments: post.comments.map((comment) => ({
+                        ...comment,
+                        id: comment.id || `comment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                        createdAt: Number.isSafeInteger(comment.createdAt) ? comment.createdAt : Date.now(),
+                      })),
+                    }),
+                  });
+                } catch (error) {
+                  migrationSucceeded = false;
+                  console.error(`기존 게시글 ${post.id}을 공유 서버로 옮기지 못했습니다.`, error);
+                  showToast("일부 기존 게시글을 공유하지 못했어요. 사진 크기나 서버 설정을 확인해 주세요.");
+                }
+              }
+              if (migrationSucceeded) localStorage.setItem(MIGRATION_KEY, "1");
+            }
+            sharedPosts = await requestPostsApi();
+            const likedIds = new Set(posts.filter((post) => post.liked).map((post) => post.id));
+            posts = sharedPosts.map((post) => ({ ...post, liked: likedIds.has(post.id) }));
+            save();
+            render();
+          } catch (error) {
+            console.error("공유 게시글을 불러오지 못했습니다.", error);
+            showToast("공유 서버에 연결하지 못했어요. 게시글이 다른 사람에게 보이지 않을 수 있습니다.");
           }
         };
         const showToast = (message) => {
@@ -668,7 +733,7 @@
               <div class="post-top">
                 <span class="post-avatar" aria-hidden="true">☻</span>
                 <div><div class="post-author">${esc(post.nickname || "익명")}${post.nickname === ADMIN_ID ? '<span class="admin-badge">관리자</span>' : ""}</div><div class="post-time">${timeAgo(post.createdAt)}</div></div>
-                <button class="post-menu" type="button" data-action="${post.authorId === ownerId || currentUser?.isAdmin ? "delete" : "report"}" data-id="${esc(post.id)}" aria-label="${post.authorId === ownerId || currentUser?.isAdmin ? "게시글 삭제" : "게시글 신고"}">${post.authorId === ownerId || currentUser?.isAdmin ? "삭제" : "···"}</button>
+                <button class="post-menu" type="button" data-action="${post.authorId === ownerId ? "delete" : "report"}" data-id="${esc(post.id)}" aria-label="${post.authorId === ownerId ? "게시글 삭제" : "게시글 신고"}">${post.authorId === ownerId ? "삭제" : "···"}</button>
               </div>
               <span class="post-category">${esc(categoryName(post.category))}</span>
               <h2>${esc(post.title)}</h2>
@@ -749,7 +814,7 @@
           };
           reader.readAsDataURL(file);
         });
-        const addPost = (event) => {
+        const addPost = async (event) => {
           event.preventDefault();
           const title = $("#post-title").value.trim();
           const body = $("#post-body").value.trim();
@@ -758,13 +823,23 @@
             showToast("제목과 내용을 확인해 주세요.");
             return;
           }
-          const postId = `post-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-          const videoId = selectedVideo ? `${postId}-video` : "";
-          posts.unshift({ id: postId, authorId: ownerId, nickname: currentUser?.nickname || "", category, title, body, image: selectedImage, videoId, createdAt: Date.now(), likes: 0, comments: [], liked: false });
-          if (!save()) {
-            posts.shift();
+          if (selectedImage.length > 1200000) {
+            showToast("사진 용량이 커서 공유할 수 없어요. 더 작은 사진을 선택해 주세요.");
             return;
           }
+          const postId = `post-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          const videoId = selectedVideo ? `${postId}-video` : "";
+          const post = { id: postId, authorId: ownerId, nickname: currentUser?.nickname || "", category, title, body, image: selectedImage, videoId, createdAt: Date.now(), likes: 0, comments: [], liked: false };
+          let savedPost;
+          try {
+            savedPost = await requestPostsApi("", { method: "POST", body: JSON.stringify(post) });
+          } catch (error) {
+            console.error("게시글을 공유 서버에 저장하지 못했습니다.", error);
+            showToast(`게시글을 등록하지 못했어요. ${error.message}`);
+            return;
+          }
+          posts.unshift({ ...savedPost, videoId });
+          save();
           if (selectedVideo) {
             putVideo(videoId, selectedVideo).catch((error) => {
               console.error("동영상을 저장하지 못했습니다.", error);
@@ -777,7 +852,7 @@
           $("#feed-title").textContent = "전체 이야기";
           closeModal();
           render();
-          showToast("익명으로 이야기를 등록했어요. (이 브라우저에서만 보여요)");
+          showToast("게시글을 등록했어요. 다른 사람도 볼 수 있어요.");
         };
         $("#new-post").addEventListener("click", openModal);
         $("#new-post-top").addEventListener("click", openModal);
@@ -958,10 +1033,21 @@
           const post = posts.find((item) => item.id === button.dataset.id);
           if (!post) return;
           if (button.dataset.action === "like") {
-            post.liked = !post.liked;
-            post.likes = Math.max(0, post.likes + (post.liked ? 1 : -1));
-            save();
-            render();
+            const previousLiked = post.liked;
+            post.liked = !previousLiked;
+            try {
+              const updatedPost = await requestPostsApi(`/${encodeURIComponent(post.id)}/likes`, {
+                method: "POST",
+                body: JSON.stringify({ delta: post.liked ? 1 : -1 }),
+              });
+              post.likes = updatedPost.likes;
+              save();
+              render();
+            } catch (error) {
+              post.liked = previousLiked;
+              console.error("공감을 저장하지 못했습니다.", error);
+              showToast("공감을 저장하지 못했어요. 서버 연결을 확인해 주세요.");
+            }
           } else if (button.dataset.action === "comment") {
             const comments = $(`#comments-${CSS.escape(post.id)}`);
             comments.classList.toggle("hidden");
@@ -971,11 +1057,21 @@
               showToast("신고 기능은 데모에서 접수되지 않아요. 불편한 글은 브라우저를 닫아주세요.");
             }
           } else if (button.dataset.action === "delete") {
-            if (post.authorId !== ownerId && !currentUser?.isAdmin) {
+            if (post.authorId !== ownerId) {
               showToast("작성자 또는 관리자만 게시글을 삭제할 수 있어요.");
               return;
             }
             if (!window.confirm("이 게시글을 삭제할까요? 댓글도 함께 삭제됩니다.")) return;
+            try {
+              await requestPostsApi(`/${encodeURIComponent(post.id)}`, {
+                method: "DELETE",
+                body: JSON.stringify({ authorId: ownerId }),
+              });
+            } catch (error) {
+              console.error("게시글을 공유 서버에서 삭제하지 못했습니다.", error);
+              showToast("게시글을 삭제하지 못했어요. 작성자 계정과 서버 연결을 확인해 주세요.");
+              return;
+            }
             posts = posts.filter((item) => item.id !== post.id);
             if (post.videoId) deleteVideo(post.videoId).catch((error) => console.error("동영상 삭제에 실패했습니다.", error));
             save();
@@ -997,15 +1093,26 @@
             }
           }
         });
-        $("#feed").addEventListener("submit", (event) => {
+        $("#feed").addEventListener("submit", async (event) => {
           if (!event.target.matches(".reply-form")) return;
           event.preventDefault();
           const post = posts.find((item) => item.id === event.target.dataset.postId);
           const input = event.target.querySelector("input");
           const body = input.value.trim();
           if (!post || !body) return;
-          post.comments.push({ id: `comment-${Date.now()}`, body, createdAt: Date.now() });
-          save();
+          const comment = { id: `comment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, body, createdAt: Date.now() };
+          try {
+            const updatedPost = await requestPostsApi(`/${encodeURIComponent(post.id)}/comments`, {
+              method: "POST",
+              body: JSON.stringify(comment),
+            });
+            Object.assign(post, updatedPost, { liked: post.liked });
+            save();
+          } catch (error) {
+            console.error("댓글을 공유 서버에 저장하지 못했습니다.", error);
+            showToast("댓글을 등록하지 못했어요. 서버 연결을 확인해 주세요.");
+            return;
+          }
           renderFeed();
           $(`#comments-${CSS.escape(post.id)}`).classList.remove("hidden");
           showToast("댓글을 익명으로 등록했어요.");
@@ -1013,6 +1120,7 @@
         applyTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light", false);
         renderAccountButton();
         render();
+        syncSharedPosts();
       })();
     </script>
   </body>
