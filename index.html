@@ -957,9 +957,6 @@
         };
         $("#new-post").addEventListener("click", openModal);
         $("#new-post-top").addEventListener("click", openModal);
-        $("#ad-inquiry-button").addEventListener("click", openAdModal);
-        $("#close-ad-modal").addEventListener("click", closeAdModal);
-        $("#ad-modal").addEventListener("click", (event) => { if (event.target === $("#ad-modal")) closeAdModal(); });
         $("#ad-form").addEventListener("submit", async (event) => {
           event.preventDefault();
           const submit = $("#ad-submit");
@@ -1003,6 +1000,9 @@
           $("#ad-modal").classList.add("hidden");
           $("#ad-form").reset();
         };
+        $("#ad-inquiry-button").addEventListener("click", openAdModal);
+        $("#close-ad-modal").addEventListener("click", closeAdModal);
+        $("#ad-modal").addEventListener("click", (event) => { if (event.target === $("#ad-modal")) closeAdModal(); });
         const setAuthMode = (mode) => {
           authMode = mode;
           $("#login-tab").classList.toggle("active", mode === "login");
