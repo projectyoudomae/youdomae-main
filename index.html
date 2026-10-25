@@ -558,7 +558,12 @@
             const detail = body.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);
             throw new Error(`${serviceName}가 JSON이 아닌 응답을 반환했습니다 (HTTP ${response.status}).${detail ? ` ${detail}` : ""}`);
           }
-          if (!response.ok) throw new Error(data.error || `${serviceName} 요청에 실패했습니다 (HTTP ${response.status}).`);
+          if (!response.ok) {
+            const providerDetails = serviceName === "광고 문의" && data.providerCode
+              ? ` (Resend ${data.providerCode}, HTTP ${data.providerStatus || response.status})`
+              : "";
+            throw new Error(`${data.error || `${serviceName} 요청에 실패했습니다 (HTTP ${response.status}).`}${providerDetails}`);
+          }
           return data;
         };
         const requestAuthApi = async (path, options = {}) => {

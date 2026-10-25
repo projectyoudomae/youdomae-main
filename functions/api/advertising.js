@@ -94,12 +94,28 @@ export const onRequestPost = async (context) => {
     return json({ error: "메일 서비스에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요." }, 502);
   }
   if (!emailResponse.ok) {
-    console.error("Resend rejected an advertising inquiry.", emailResponse.status);
+    let errorCode = "unknown";
+    try {
+      const responseBody = await emailResponse.json();
+      if (typeof responseBody?.name === "string" && /^[a-z0-9_-]{1,64}$/i.test(responseBody.name)) {
+        errorCode = responseBody.name;
+      }
+    } catch (error) {
+      console.error("Could not read Resend's advertising inquiry error response.", error);
+    }
+    console.error("Resend rejected an advertising inquiry.", {
+      status: emailResponse.status,
+      code: errorCode,
+    });
     await db.prepare(`
       DELETE FROM advertising_rate_limits
       WHERE ip_hash = ? AND last_submitted_at = ?
     `).bind(ipHash, now).run();
-    return json({ error: "문의 메일 발송에 실패했습니다. 잠시 후 다시 시도해 주세요." }, 502);
+    return json({
+      error: "문의 메일 발송에 실패했습니다.",
+      providerStatus: emailResponse.status,
+      providerCode: errorCode,
+    }, 502);
   }
 
   return json({ ok: true });
