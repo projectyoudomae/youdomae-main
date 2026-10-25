@@ -7,6 +7,11 @@ const sha256 = async (value) => {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 };
 
+export const onRequestGet = async (context) => {
+  const missing = ["RESEND_API_KEY", "ADS_FROM_EMAIL"].filter((name) => !context.env[name]?.trim());
+  return json({ configured: missing.length === 0, missing });
+};
+
 export const onRequestPost = async (context) => {
   const origin = context.request.headers.get("origin");
   if (origin) {
