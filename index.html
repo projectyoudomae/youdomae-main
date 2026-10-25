@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f6f7fb" />
+    <meta name="description" content="이름 없이 편하게 이야기 나누는 익명 커뮤니티" />
+    <title>모여, 익명 라운지</title>
+    <script>
+      try {
+        if (localStorage.getItem("moyeo-anon-theme-v1") === "dark") {
+          document.documentElement.dataset.theme = "dark";
+        }
+      } catch (error) {
+        console.warn("저장된 화면 테마를 불러오지 못했습니다.", error);
+      }
+    </script>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #24263a;
+        --muted: #85889c;
+        --line: #e9eaf1;
+        --paper: #fff;
+        --canvas: #f6f7fb;
+        --purple: #6657d9;
+        --purple-dark: #5142c3;
+        --lavender: #f0eeff;
+        --mint: #e8f7f2;
+        --surface-soft: #f7f7fb;
+        --surface-input: #fff;
+        --text-soft: #696c80;
+        --text-strong: #4b4d62;
+        --border-soft: #f0f0f5;
+        --shadow: 0 8px 28px #34345b0b;
+        --neon-purple: #806cff;
+        --neon-teal: #52cbb0;
+        --neon-wash: #806cff0a;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ink: #f1efff;
+        --muted: #a5a2c2;
+        --line: #34314f;
+        --paper: #171629;
+        --canvas: #0d0c18;
+        --purple: #a394ff;
+        --purple-dark: #7968f2;
+        --lavender: #262044;
+        --mint: #18332f;
+        --surface-soft: #201e35;
+        --surface-input: #12111f;
+        --text-soft: #c0bdd5;
+        --text-strong: #e3e0f5;
+        --border-soft: #302d49;
+        --shadow: 0 8px 30px #0005, 0 0 22px #806cff0a;
+        --neon-purple: #9b87ff;
+        --neon-teal: #5fe0c0;
+        --neon-wash: #806cff12;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; color: var(--ink); background: radial-gradient(ellipse at 7% 0%, #8e7eff0b, transparent 34rem), radial-gradient(ellipse at 96% 24%, #55d5b20a, transparent 30rem), var(--canvas); transition: background .2s, color .2s; }
+      button, input, textarea, select { font: inherit; }
+      button { color: inherit; }
+      button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--neon-purple); outline-offset: 3px; box-shadow: 0 0 0 5px color-mix(in srgb, var(--neon-purple) 13%, transparent); }
+      .topbar { position: sticky; z-index: 5; top: 0; height: 68px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--paper) 92%, transparent); backdrop-filter: blur(14px); }
+      .topbar-inner { display: flex; width: min(1160px, calc(100% - 36px)); height: 100%; align-items: center; justify-content: space-between; margin: 0 auto; }
+      .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; }
+      .brand-mark { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; background: linear-gradient(145deg, var(--purple), var(--purple-dark)); color: white; font-size: 19px; font-weight: 850; box-shadow: 0 4px 14px #6657d92e; }
+      .brand-name { font-size: 18px; font-weight: 850; letter-spacing: -.04em; }
+      .brand-name span { color: var(--purple); }
+      .topbar-right { display: flex; align-items: center; gap: 10px; }
+      .privacy-pill { display: flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 999px; background: #f0f7f3; color: #3c8067; font-size: 11px; font-weight: 700; }
+      .account-button { height: 38px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); cursor: pointer; font-size: 11px; font-weight: 750; white-space: nowrap; }
+      .account-button:hover, .icon-button:hover { border-color: color-mix(in srgb, var(--neon-purple) 42%, var(--line)); box-shadow: 0 0 16px var(--neon-wash); }
+      .account-button.logged-in { border-color: #b9b1f8; background: var(--lavender); color: var(--purple-dark); }
+      .admin-badge { display: inline-block; margin-left: 6px; padding: 3px 6px; border-radius: 6px; background: #ffeff5; color: #c44774; font-size: 9px; font-weight: 850; vertical-align: 1px; }
+      :root[data-theme="dark"] .admin-badge { background: #4a2538; color: #ff9fc3; }
+      .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 15px; padding: 4px; border-radius: 10px; background: var(--surface-soft); }
+      .auth-tab { height: 36px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; font-weight: 750; }
+      .auth-tab.active { background: var(--paper); color: var(--purple-dark); box-shadow: 0 2px 10px #34345b12; }
+      .auth-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+      .auth-actions .primary { padding: 11px 16px; }
+      .icon-button { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); cursor: pointer; }
+      .page { width: min(1160px, calc(100% - 36px)); margin: 0 auto; }
+      .welcome { display: flex; min-height: 158px; align-items: center; justify-content: space-between; gap: 24px; margin: 26px 0 22px; padding: 28px 34px; overflow: hidden; border: 1px solid #dedaff; border-radius: 20px; background: linear-gradient(110deg, #eeedff, #f8f6ff 64%, #eaf8f3); box-shadow: 0 12px 38px #6756d90d, inset 0 1px #ffffffc9; }
+      .welcome h1 { margin: 0; font-size: clamp(25px, 4vw, 34px); letter-spacing: -.05em; }
+      .welcome p { margin: 9px 0 0; color: #6f7188; font-size: 14px; line-height: 1.65; }
+      .welcome-art { flex: 0 0 auto; padding-right: 20px; color: #7667df; font-size: 58px; transform: rotate(-8deg); }
+      .layout { display: grid; grid-template-columns: 205px minmax(0, 1fr) 250px; align-items: start; gap: 20px; }
+      .sidebar, .rightbar { position: sticky; top: 88px; }
+      .nav-card, .side-card, .composer, .post, .empty, .search-box { border: 1px solid var(--line); border-radius: 15px; background: linear-gradient(145deg, color-mix(in srgb, var(--paper) 98%, var(--neon-purple)), var(--paper) 62%); box-shadow: var(--shadow); transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+      .nav-card:hover, .side-card:hover, .composer:hover, .post:hover, .search-box:focus-within { border-color: color-mix(in srgb, var(--neon-purple) 34%, var(--line)); box-shadow: 0 10px 30px #34345b0c, 0 0 22px var(--neon-wash); }
+      .composer:hover, .post:hover { transform: translateY(-1px); }
+      .nav-card { padding: 12px; }
+      .side-heading { margin: 8px 9px 10px; color: #a0a2b2; font-size: 10px; font-weight: 800; letter-spacing: .1em; }
+      .category-link { display: flex; width: 100%; align-items: center; gap: 10px; padding: 10px; border: 0; border-radius: 10px; background: transparent; color: #66697e; cursor: pointer; text-align: left; font-size: 13px; }
+      .category-link:hover { background: #f7f7fb; }
+      .category-link.active { background: linear-gradient(100deg, var(--lavender), color-mix(in srgb, var(--lavender) 68%, var(--neon-teal))); color: var(--purple-dark); font-weight: 750; box-shadow: inset 2px 0 var(--neon-purple), 0 0 16px var(--neon-wash); }
+      .category-emoji { width: 22px; text-align: center; }
+      .nav-count { margin-left: auto; color: #a2a3b2; font-size: 11px; }
+      .side-card { margin-top: 13px; padding: 16px; }
+      .side-card h2 { margin: 0 0 10px; font-size: 13px; }
+      .side-card p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.7; }
+      .side-card ul { margin: 0; padding-left: 17px; color: #73768b; font-size: 11px; line-height: 1.9; }
+      .main-feed { min-width: 0; }
+      .feed-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 2px 12px; }
+      .feed-title { margin: 0; font-size: 17px; letter-spacing: -.03em; }
+      .sort-select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; outline: none; background: white; color: #707286; font-size: 11px; }
+      .composer { display: flex; align-items: center; gap: 11px; margin-bottom: 12px; padding: 13px; cursor: pointer; }
+      .anonymous-avatar { display: grid; flex: 0 0 38px; width: 38px; height: 38px; place-items: center; border-radius: 14px; background: #f0eeff; font-size: 18px; }
+      .composer-prompt { flex: 1; padding: 11px 13px; border: 1px solid #ededf2; border-radius: 10px; color: #9a9bad; font-size: 12px; transition: border-color .2s ease, box-shadow .2s ease; }
+      .composer:hover .composer-prompt { border-color: color-mix(in srgb, var(--neon-purple) 36%, #ededf2); box-shadow: inset 0 0 12px var(--neon-wash); }
+      .primary { border: 0; border-radius: 10px; background: linear-gradient(120deg, var(--purple), var(--purple-dark)); color: white; cursor: pointer; font-size: 12px; font-weight: 750; box-shadow: 0 4px 14px color-mix(in srgb, var(--neon-purple) 22%, transparent); transition: background .15s, transform .15s, box-shadow .15s; }
+      .primary:hover { transform: translateY(-1px); background: linear-gradient(120deg, var(--purple-dark), var(--purple)); box-shadow: 0 6px 18px color-mix(in srgb, var(--neon-purple) 34%, transparent); }
+      .composer .primary { padding: 11px 14px; }
+      .search-box { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 0 12px; }
+      .search-box input { width: 100%; height: 40px; border: 0; outline: 0; background: transparent; font-size: 12px; }
+      .search-box input::placeholder { color: #a2a3b2; }
+      .post { margin-bottom: 12px; padding: 17px 18px 12px; }
+      .post-top { display: flex; align-items: center; gap: 9px; }
+      .post-avatar { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 12px; background: #f4f2ff; font-size: 16px; }
+      .post-author { font-size: 11px; font-weight: 750; }
+      .post-time { margin-top: 3px; color: #a2a3b2; font-size: 10px; }
+      .post-menu { margin-left: auto; border: 0; background: transparent; color: #9799a9; cursor: pointer; font-size: 18px; }
+      .post-category { display: inline-flex; margin: 13px 0 7px; padding: 4px 8px; border: 1px solid #806cff18; border-radius: 6px; background: linear-gradient(100deg, #f2f1ff, #f1fbf8); color: #6e61ca; font-size: 10px; font-weight: 750; }
+      .post h2 { margin: 0; font-size: 15px; line-height: 1.5; letter-spacing: -.02em; }
+      .post-body { margin: 7px 0 12px; color: #696c80; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.8; }
+      .post-actions { display: flex; align-items: center; gap: 7px; padding-top: 10px; border-top: 1px solid #f0f0f5; }
+      .action-button { display: inline-flex; align-items: center; gap: 5px; padding: 6px 9px; border: 0; border-radius: 8px; background: transparent; color: #85879a; cursor: pointer; font-size: 10px; }
+      .action-button:hover { background: #f5f4fc; color: var(--purple); }
+      .action-button.liked { background: #f0eeff; color: var(--purple); font-weight: 750; }
+      .action-spacer { flex: 1; }
+      .comments { margin-top: 11px; padding-top: 10px; border-top: 1px solid #f0f0f5; }
+      .comment { display: flex; gap: 8px; margin: 9px 0; }
+      .comment-mark { color: #a199e8; font-size: 12px; }
+      .comment-body { min-width: 0; color: #676a7d; font-size: 11px; line-height: 1.7; }
+      .comment-body strong { margin-right: 5px; color: #44465b; }
+      .reply-form { display: flex; gap: 7px; margin-top: 10px; }
+      .reply-form input { flex: 1; min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; outline-color: #b6aff6; font-size: 11px; }
+      .reply-form button { padding: 0 11px; }
+      .empty { padding: 38px 18px; color: var(--muted); text-align: center; font-size: 12px; line-height: 1.7; }
+      .empty strong { display: block; margin-bottom: 6px; color: #4b4d62; font-size: 15px; }
+      .trending { display: flex; flex-direction: column; gap: 11px; }
+      .trend { padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; }
+      .trend-label { margin-bottom: 3px; color: #a0a2b2; font-size: 9px; }
+      .trend-title { color: #56586d; font-size: 11px; font-weight: 700; line-height: 1.5; }
+      .trend:hover .trend-title { color: var(--purple); }
+      .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+      .tag { padding: 6px 8px; border: 0; border-radius: 7px; background: #f4f4f8; color: #737589; cursor: pointer; font-size: 10px; }
+      .tag:hover { background: var(--lavender); color: var(--purple-dark); }
+      .notice { margin-top: 13px; padding: 12px; border: 1px solid #dceee6; border-radius: 11px; background: #f0f8f4; color: #587c6a; font-size: 10px; line-height: 1.65; }
+      .notice strong { display: block; margin-bottom: 4px; }
+      .theme-toggle { min-width: 38px; font-size: 16px; }
+      .category-link, .action-button, .post-menu, .icon-button, .tag, .trend, .primary, .choice-button { transition: color .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .15s ease; }
+      :root[data-theme="dark"] body {
+        background:
+          radial-gradient(ellipse at 8% 0%, #30245145, transparent 38rem),
+          radial-gradient(ellipse at 95% 20%, #143e4840, transparent 34rem),
+          var(--canvas);
+      }
+      :root[data-theme="dark"] .brand-mark {
+        background: linear-gradient(145deg, #846dff, #5141ca);
+        box-shadow: 0 0 20px #826eff77;
+      }
+      :root[data-theme="dark"] .topbar { border-bottom-color: #7162c52b; box-shadow: 0 5px 24px #0002; }
+      :root[data-theme="dark"] .privacy-pill { border: 1px solid #5fe0c02b; box-shadow: 0 0 14px #5fe0c00b, inset 0 0 12px #5fe0c008; }
+      :root[data-theme="dark"] .brand-name span { color: #a99cff; text-shadow: 0 0 14px #8c79ff9c; }
+      :root[data-theme="dark"] .privacy-pill { background: #15302c; color: #8ce8c8; box-shadow: 0 0 14px #5fe0c00b, inset 0 0 14px #62e9b20c; }
+      :root[data-theme="dark"] .icon-button:hover { border-color: #8d7bff; color: #c0b6ff; box-shadow: 0 0 16px #806cff42; }
+      :root[data-theme="dark"] .welcome {
+        border-color: #4a3e77;
+        background: linear-gradient(110deg, #211c3a, #1b1930 64%, #142e31);
+        box-shadow: inset 0 0 38px #a38bff0b, 0 10px 36px #0003, 0 0 28px #806cff10;
+      }
+      :root[data-theme="dark"] .welcome h1 { text-shadow: 0 0 24px #a795ff35; }
+      :root[data-theme="dark"] .welcome p { color: #c0bad9; }
+      :root[data-theme="dark"] .welcome-art { color: #b3a5ff; text-shadow: 0 0 22px #a28bffb3; }
+      :root[data-theme="dark"] .nav-card,
+      :root[data-theme="dark"] .side-card,
+      :root[data-theme="dark"] .composer,
+      :root[data-theme="dark"] .post,
+      :root[data-theme="dark"] .empty,
+      :root[data-theme="dark"] .search-box {
+        border-color: #35314f;
+        box-shadow: 0 8px 28px #0003, 0 0 18px #836dff08;
+      }
+      :root[data-theme="dark"] .nav-card:hover,
+      :root[data-theme="dark"] .side-card:hover,
+      :root[data-theme="dark"] .composer:hover,
+      :root[data-theme="dark"] .post:hover,
+      :root[data-theme="dark"] .search-box:focus-within {
+        border-color: #7464c875;
+        box-shadow: 0 12px 34px #0005, 0 0 24px #806cff18, inset 0 0 18px #806cff07;
+      }
+      :root[data-theme="dark"] .category-link { color: #c0bdd5; }
+      :root[data-theme="dark"] .category-link:hover { background: #242139; }
+      :root[data-theme="dark"] .category-link.active { background: linear-gradient(100deg, #2b2450, #203431); color: #c0b5ff; box-shadow: inset 2px 0 #a392ff, inset 0 0 16px #907aff16, 0 0 14px #806cff12; }
+      :root[data-theme="dark"] .nav-count,
+      :root[data-theme="dark"] .side-heading { color: #8985a8; }
+      :root[data-theme="dark"] .sort-select,
+      :root[data-theme="dark"] .icon-button { border-color: var(--line); background: var(--surface-input); color: var(--ink); }
+      :root[data-theme="dark"] .composer-prompt { border-color: #39354f; background: #12111f; color: #a5a2bc; }
+      :root[data-theme="dark"] .composer:hover .composer-prompt { border-color: #7666c966; box-shadow: inset 0 0 14px #806cff10; }
+      :root[data-theme="dark"] .anonymous-avatar,
+      :root[data-theme="dark"] .post-avatar { background: #292344; color: #c6baff; }
+      :root[data-theme="dark"] .primary { background: linear-gradient(120deg, #7965f2, #9c67e9); box-shadow: 0 0 16px #806cff2b; }
+      :root[data-theme="dark"] .primary:hover { background: linear-gradient(120deg, #927fff, #b37af7); box-shadow: 0 0 20px #967dff69; }
+      :root[data-theme="dark"] .search-box input { color: var(--ink); }
+      :root[data-theme="dark"] .search-box input::placeholder { color: #85819d; }
+      :root[data-theme="dark"] .post-menu { color: #a5a2c2; }
+      :root[data-theme="dark"] .post-menu:hover { color: #ff91bd; text-shadow: 0 0 12px #ff72ad8c; }
+      :root[data-theme="dark"] .post-category { border-color: #9b87ff2b; background: linear-gradient(100deg, #292347, #1c302f); color: #c0b5ff; box-shadow: 0 0 12px #806cff0b; }
+      :root[data-theme="dark"] .post-body,
+      :root[data-theme="dark"] .side-card p { color: var(--text-soft); }
+      :root[data-theme="dark"] .post-actions,
+      :root[data-theme="dark"] .comments { border-color: var(--border-soft); }
+      :root[data-theme="dark"] .action-button { color: #aaa7c1; }
+      :root[data-theme="dark"] .action-button:hover { background: #282442; color: #c0b4ff; text-shadow: 0 0 12px #9885ff63; }
+      :root[data-theme="dark"] .action-button.liked { background: #302346; color: #ff92c2; }
+      :root[data-theme="dark"] .comment-body { color: #c0bdd5; }
+      :root[data-theme="dark"] .comment-body strong,
+      :root[data-theme="dark"] .empty strong { color: #f1efff; }
+      :root[data-theme="dark"] .comment-mark { color: #a89aff; text-shadow: 0 0 10px #9885ff75; }
+      :root[data-theme="dark"] .reply-form input,
+      :root[data-theme="dark"] .field input,
+      :root[data-theme="dark"] .field textarea,
+      :root[data-theme="dark"] .field select { border-color: #3c3858; background: #12111f; color: var(--ink); }
+      :root[data-theme="dark"] .reply-form input::placeholder,
+      :root[data-theme="dark"] .field input::placeholder,
+      :root[data-theme="dark"] .field textarea::placeholder { color: #827f9a; }
+      :root[data-theme="dark"] .trend-title { color: #d0cde2; }
+      :root[data-theme="dark"] .trend:hover .trend-title { color: #b4a6ff; text-shadow: 0 0 12px #9b87ff52; }
+      :root[data-theme="dark"] .tag { background: #242139; color: #c2bfd6; }
+      :root[data-theme="dark"] .tag:hover { background: #31294e; color: #c2b7ff; box-shadow: 0 0 12px #8d79ff35; }
+      :root[data-theme="dark"] .notice { border-color: #285044; background: #142a27; color: #9dd6bd; }
+      :root[data-theme="dark"] .modal { border: 1px solid #40395f; background: #19172a; }
+      :root[data-theme="dark"] .close-button { background: #2a2740; color: var(--ink); }
+      :root[data-theme="dark"] .field label { color: #d0cde2; }
+      :root[data-theme="dark"] .field-hint,
+      :root[data-theme="dark"] .modal-footer p { color: #9692ad; }
+      :root[data-theme="dark"] .toast { border: 1px solid #504478; background: #211d37; box-shadow: 0 0 22px #806cff20; }
+      :root[data-theme="dark"] .empty { color: #aaa7c1; }
+      :root[data-theme="dark"] .empty strong { color: #eeeaff; }
+      :root[data-theme="dark"] .privacy-pill { color: #8ce8c8; }
+      .modal-backdrop { position: fixed; z-index: 10; inset: 0; display: grid; place-items: center; padding: 18px; background: #19182c80; }
+      .modal { width: min(500px, 100%); max-height: min(90vh, 700px); overflow: auto; padding: 22px; border-radius: 18px; background: white; box-shadow: 0 24px 80px #0003; }
+      .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 17px; }
+      .modal-head h2 { margin: 0; font-size: 18px; }
+      .close-button { width: 32px; height: 32px; border: 0; border-radius: 9px; background: #f4f4f8; cursor: pointer; }
+      .field { display: grid; gap: 7px; margin-bottom: 13px; }
+      .field label { color: #66687b; font-size: 11px; font-weight: 750; }
+      .field input, .field textarea, .field select { width: 100%; padding: 11px 12px; border: 1px solid #e7e7ef; border-radius: 9px; outline-color: #aaa1f5; background: white; color: var(--ink); font-size: 12px; }
+      .field textarea { min-height: 145px; resize: vertical; line-height: 1.7; }
+      .field-hint { color: #a0a2b2; font-size: 10px; }
+      .image-picker { position: relative; display: grid; min-height: 78px; place-items: center; border: 1px dashed #d9dae7; border-radius: 9px; background: var(--surface-soft); color: var(--text-soft); cursor: pointer; text-align: center; font-size: 11px; }
+      .image-picker:hover { border-color: var(--purple); color: var(--purple); }
+      .image-picker input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+      .image-preview { position: relative; width: 100%; }
+      .image-preview img { display: block; width: 100%; max-height: 220px; border-radius: 9px; object-fit: cover; }
+      .remove-image { position: absolute; top: 8px; right: 8px; min-width: 28px; height: 28px; border: 0; border-radius: 8px; background: #252536d9; color: white; cursor: pointer; }
+      .post-image { display: block; width: 100%; max-height: 420px; margin: 12px 0 14px; border-radius: 9px; object-fit: cover; }
+      .video-preview, .post-video { display: block; width: 100%; max-height: 420px; margin-top: 8px; border-radius: 9px; background: #111; }
+      .video-preview-actions { position: absolute; top: 16px; right: 16px; }
+      :root[data-theme="dark"] .image-picker { border-color: #45415f; }
+      .modal-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 17px; }
+      .modal-footer p { max-width: 260px; margin: 0; color: #9597a7; font-size: 10px; line-height: 1.5; }
+      .modal-footer .primary { padding: 11px 16px; }
+      .toast { position: fixed; z-index: 12; right: 20px; bottom: 20px; max-width: min(360px, calc(100% - 40px)); padding: 12px 16px; border-radius: 10px; background: #29283d; color: white; box-shadow: var(--shadow); font-size: 12px; }
+      .hidden { display: none !important; }
+      .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+      @media (max-width: 980px) {
+        .layout { grid-template-columns: 175px minmax(0, 1fr); }
+        .rightbar { position: static; display: grid; grid-column: 1 / -1; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .rightbar .side-card { margin: 0; }
+      }
+      @media (max-width: 650px) {
+        .topbar { height: 58px; }
+        .topbar-inner, .page { width: calc(100% - 24px); }
+        .privacy-pill { display: none; }
+        .welcome { min-height: 130px; margin: 15px 0; padding: 22px; }
+        .welcome-art { padding-right: 0; font-size: 43px; }
+        .layout { grid-template-columns: 1fr; gap: 12px; }
+        .sidebar { position: static; overflow-x: auto; }
+        .nav-card { display: flex; min-width: max-content; gap: 4px; padding: 7px; }
+        .side-heading { display: none; }
+        .category-link { width: auto; padding: 9px 11px; }
+        .nav-count { display: none; }
+        .sidebar > .side-card { display: none; }
+        .rightbar { grid-column: auto; grid-template-columns: 1fr; }
+        .rightbar .side-card:nth-child(2) { display: none; }
+        .post { padding: 14px; }
+        .welcome p { max-width: 390px; font-size: 12px; }
+      }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="#" aria-label="모여 익명 라운지 홈">
+          <span class="brand-mark" aria-hidden="true">모</span>
+          <span class="brand-name">모여<span>.</span></span>
+        </a>
+        <div class="topbar-right">
+          <span class="privacy-pill"><span aria-hidden="true">●</span> 오늘 하루는 어땠나요?</span>
+          <button class="account-button" id="account-button" type="button">로그인</button>
+          <button class="icon-button theme-toggle" id="theme-toggle" type="button" aria-label="다크 모드 켜기" title="다크 모드 켜기">☾</button>
+          <button class="icon-button" id="new-post-top" type="button" aria-label="글쓰기">✎</button>
+        </div>
+      </div>
+    </header>
+    <main class="page">
+      <section class="welcome" aria-labelledby="welcome-title">
+        <div>
+          <h1 id="welcome-title">오늘, 어떤 이야기를 나눠볼까요?</h1>
+          <p>이름은 잠시 내려두고, 생각과 마음을 편하게 나누는 곳.<br />당신의 이야기에 누군가 고개를 끄덕일 거예요.</p>
+        </div>
+        <div class="welcome-art" aria-hidden="true">☁︎</div>
+      </section>
+      <div class="layout">
+        <aside class="sidebar" aria-label="게시판 메뉴">
+          <nav class="nav-card" id="categories"></nav>
+          <section class="side-card">
+            <h2>모여의 약속</h2>
+            <ul>
+              <li>서로를 존중해요</li>
+              <li>개인정보는 올리지 않아요</li>
+              <li>불편한 글은 신고해요</li>
+            </ul>
+          </section>
+        </aside>
+        <section class="main-feed" aria-label="게시글">
+          <div class="feed-head">
+            <h2 class="feed-title" id="feed-title">전체 이야기</h2>
+            <label><span class="sr-only">정렬 방법</span><select class="sort-select" id="sort-select"><option value="recent">최신순</option><option value="popular">공감순</option></select></label>
+          </div>
+          <div class="search-box"><span aria-hidden="true">⌕</span><label class="sr-only" for="search">게시글 검색</label><input id="search" type="search" placeholder="궁금한 이야기를 찾아보세요" autocomplete="off" /></div>
+          <button class="composer" id="new-post" type="button">
+            <span class="anonymous-avatar" aria-hidden="true">☻</span>
+            <span class="composer-prompt">무슨 이야기를 나누고 싶나요?</span>
+            <span class="primary">글쓰기</span>
+          </button>
+          <div id="feed" aria-live="polite"></div>
+        </section>
+        <aside class="rightbar" aria-label="커뮤니티 소식">
+          <section class="side-card">
+            <h2>오늘의 이야기</h2>
+            <div class="trending" id="trending"></div>
+          </section>
+          <section class="side-card">
+            <h2>둘러보기</h2>
+            <p>요즘 어떤 이야기가 궁금하세요?</p>
+            <div class="tag-list" id="popular-tags"></div>
+            <div class="notice"><strong>🔒 계정과 익명에 대해</strong>이 데모는 계정, 글과 반응을 현재 브라우저에만 저장합니다. 실제 공개 커뮤니티가 아니며, 서버 기반 익명성이나 계정 보안을 제공하지 않습니다.</div>
+          </section>
+        </aside>
+      </div>
+      <p class="sr-only" id="announcement" aria-live="polite"></p>
+    </main>
+    <div class="modal-backdrop hidden" id="post-modal" role="presentation">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-head"><h2 id="modal-title">익명으로 이야기 나누기</h2><button class="close-button" id="close-modal" type="button" aria-label="닫기">×</button></div>
+        <form id="post-form">
+          <div class="field"><label for="post-category">게시판</label><select id="post-category" required></select></div>
+          <div class="field"><label for="post-title">제목</label><input id="post-title" maxlength="80" required placeholder="어떤 이야기를 나누고 싶나요?" /><span class="field-hint">최대 80자</span></div>
+          <div class="field"><label for="post-body">내용</label><textarea id="post-body" maxlength="2000" required placeholder="편하게 적어주세요. 이름, 연락처, 주소 등 개인정보는 작성하지 마세요."></textarea><span class="field-hint">최대 2,000자</span></div>
+          <div class="field"><label for="post-image">사진</label><label class="image-picker" id="image-picker" for="post-image"><span id="image-picker-text">사진을 선택하세요<br /><small>JPG, PNG, WEBP · 최대 5MB</small></span><input id="post-image" type="file" accept="image/jpeg,image/png,image/webp" /></label><div class="image-preview hidden" id="image-preview"><img id="image-preview-source" alt="선택한 사진 미리보기" /><button class="remove-image" id="remove-image" type="button" aria-label="선택한 사진 삭제">×</button></div></div>
+          <div class="field"><label for="post-video">동영상</label><label class="image-picker" id="video-picker" for="post-video"><span>동영상을 선택하세요<br /><small>MP4, WEBM · 최대 50MB</small></span><input id="post-video" type="file" accept="video/mp4,video/webm" /></label><div class="image-preview hidden" id="video-preview"><video id="video-preview-source" class="video-preview" controls muted preload="metadata"></video><div class="video-preview-actions"><button class="remove-image" id="remove-video" type="button" aria-label="선택한 동영상 삭제">×</button></div></div></div>
+          <div class="modal-footer"><p>작성한 글과 사진은 이 브라우저에 저장됩니다. 실제 공개되지 않아요.</p><button class="primary" type="submit">등록</button></div>
+        </form>
+      </section>
+    </div>
+    <div class="modal-backdrop hidden" id="auth-modal" role="presentation">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+        <div class="modal-head"><h2 id="auth-title">모여 계정</h2><button class="close-button" id="close-auth-modal" type="button" aria-label="닫기">×</button></div>
+        <div class="auth-tabs" aria-label="계정 메뉴"><button class="auth-tab active" id="login-tab" type="button">로그인</button><button class="auth-tab" id="register-tab" type="button">회원가입</button></div>
+        <form id="auth-form">
+          <div class="field"><label for="auth-name">아이디 또는 닉네임</label><input id="auth-name" minlength="2" maxlength="20" required autocomplete="username" placeholder="2~20자" /></div>
+          <div class="field hidden" id="auth-nickname-field"><label for="auth-nickname">표시 닉네임</label><input id="auth-nickname" maxlength="20" autocomplete="nickname" placeholder="게시글에 표시될 이름" /></div>
+          <div class="field"><label for="auth-password">비밀번호</label><input id="auth-password" minlength="6" maxlength="64" required type="password" autocomplete="current-password" placeholder="6자 이상" /><span class="field-hint">이 데모의 계정 정보는 현재 브라우저에만 저장됩니다.</span></div>
+          <div class="auth-actions"><button class="primary" id="auth-submit" type="submit">로그인</button></div>
+        </form>
+      </section>
+    </div>
+    <div class="toast hidden" id="toast" role="status"></div>
+    <script>
+      (() => {
+        "use strict";
+        const STORAGE_KEY = "moyeo-anon-community-v1";
+        const OWNER_KEY = "moyeo-anon-community-owner-v1";
+        const THEME_KEY = "moyeo-anon-theme-v1";
+        const USERS_KEY = "moyeo-anon-users-v1";
+        const SESSION_KEY = "moyeo-anon-session-v1";
+        const ADMIN_ID = "keaji1614";
+        const ADMIN_PASSWORD = "031026ok@";
+        const CATEGORIES = [
+          { id: "all", name: "전체 이야기", icon: "✦" },
+          { id: "daily", name: "일상", icon: "☀️" },
+          { id: "heart", name: "마음 나눔", icon: "♡" },
+          { id: "question", name: "궁금해요", icon: "？" },
+          { id: "hobby", name: "취미", icon: "✿" },
+          { id: "career", name: "학교·일", icon: "⌂" },
+          { id: "free", name: "자유 게시판", icon: "☁️" },
+        ];
+        const INITIAL_POSTS = [
+          { id: "seed-1", category: "daily", title: "오늘은 평소보다 조금 일찍 일어났어요", body: "창문을 열었더니 공기가 생각보다 상쾌하더라고요. 별일은 아니지만 이런 작은 순간이 하루를 기분 좋게 시작하게 해주는 것 같아요. 여러분은 오늘 어떤 작은 기쁨이 있었나요?", createdAt: Date.now() - 1000 * 60 * 18, likes: 24, comments: [{ id: "c-1", body: "저는 출근길에 좋아하는 노래가 나와서 좋았어요!", createdAt: Date.now() - 1000 * 60 * 10 }], liked: false },
+          { id: "seed-2", category: "question", title: "처음 시작하기 좋은 취미가 있을까요?", body: "요즘 퇴근하고 나서 새로운 걸 해보고 싶어요. 너무 많은 준비물이 필요하지 않고, 혼자서 천천히 시작할 수 있는 취미를 찾고 있어요. 해보신 것 중에 추천하고 싶은 게 있나요?", createdAt: Date.now() - 1000 * 60 * 60 * 2, likes: 17, comments: [{ id: "c-2", body: "산책하면서 사진 찍기 추천해요. 휴대폰만 있으면 되고 매일 다른 걸 발견하게 돼요.", createdAt: Date.now() - 1000 * 60 * 45 }], liked: false },
+          { id: "seed-3", category: "heart", title: "잘하고 있는지 모르겠는 날", body: "열심히 하고는 있는데 가끔은 제자리걸음 같아요. 오늘은 잠깐 쉬면서 내가 해온 것들을 천천히 돌아보려고 해요. 비슷한 날을 보내는 누군가에게도 괜찮다고 말해주고 싶네요.", createdAt: Date.now() - 1000 * 60 * 60 * 7, likes: 39, comments: [{ id: "c-3", body: "이 글을 읽고 잠깐 숨을 고르게 됐어요. 고마워요.", createdAt: Date.now() - 1000 * 60 * 60 * 3 }], liked: false },
+          { id: "seed-4", category: "hobby", title: "요즘 빠져 있는 작은 즐거움 공유해요", body: "저는 저녁마다 차 한 잔을 내려 마시는 중이에요. 향을 고르고 물 온도를 맞추는 시간이 생각보다 재미있더라고요. 다들 요즘 자주 하는 소소한 즐거움이 있나요?", createdAt: Date.now() - 1000 * 60 * 60 * 13, likes: 12, comments: [], liked: false },
+          { id: "seed-5", category: "career", title: "새로운 걸 배운다는 건 참 어렵고 재밌어요", body: "최근에 익숙하지 않은 분야를 공부하기 시작했어요. 모르는 게 많아 막막할 때도 있지만, 어제 몰랐던 걸 오늘 알게 되는 기분이 꽤 뿌듯합니다.", createdAt: Date.now() - 1000 * 60 * 60 * 25, likes: 9, comments: [], liked: false },
+        ];
+        const $ = (selector) => document.querySelector(selector);
+        const esc = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+        const categoryName = (id) => CATEGORIES.find((category) => category.id === id)?.name ?? "자유 게시판";
+        const createOwnerId = () => {
+          if (typeof crypto.randomUUID === "function") return `owner-${crypto.randomUUID()}`;
+          const random = crypto.getRandomValues(new Uint32Array(4));
+          return `owner-${Array.from(random, (value) => value.toString(16)).join("-")}`;
+        };
+        const getOwnerId = () => {
+          try {
+            const savedOwnerId = localStorage.getItem(OWNER_KEY);
+            if (savedOwnerId) return savedOwnerId;
+            const ownerId = createOwnerId();
+            localStorage.setItem(OWNER_KEY, ownerId);
+            return ownerId;
+          } catch (error) {
+            console.error("작성자 식별 정보를 저장하지 못했습니다.", error);
+            return createOwnerId();
+          }
+        };
+        let ownerId = getOwnerId();
+        let authMode = "login";
+        let currentUser = null;
+        const loadJson = (key, fallback) => {
+          try {
+            const value = JSON.parse(localStorage.getItem(key));
+            return value ?? fallback;
+          } catch (error) {
+            return fallback;
+          }
+        };
+        const users = loadJson(USERS_KEY, {});
+        const session = loadJson(SESSION_KEY, null);
+        if (session?.admin) {
+          currentUser = { id: "admin-keaji1614", loginName: ADMIN_ID, nickname: "keaji1614", isAdmin: true };
+        } else if (session?.userId && users[session.userId]) {
+          currentUser = users[session.userId];
+        }
+        if (currentUser) ownerId = currentUser.id;
+        const hashPassword = async (password) => {
+          const bytes = new TextEncoder().encode(password);
+          const digest = await crypto.subtle.digest("SHA-256", bytes);
+          return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+        };
+        const loadPosts = () => {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return INITIAL_POSTS;
+            const posts = JSON.parse(raw);
+            if (!Array.isArray(posts)) throw new TypeError("저장된 글 형식이 올바르지 않습니다.");
+            return posts.filter((post) =>
+              post && typeof post.id === "string" &&
+              typeof post.title === "string" && typeof post.body === "string" &&
+              CATEGORIES.some((category) => category.id === post.category) &&
+              Number.isFinite(post.createdAt) && Number.isFinite(post.likes) &&
+              Array.isArray(post.comments),
+            ).map((post) => ({ ...post, liked: Boolean(post.liked), comments: post.comments.filter((comment) => comment && typeof comment.body === "string") }));
+          } catch (error) {
+            console.error("커뮤니티 글을 불러오지 못했습니다.", error);
+            return INITIAL_POSTS;
+          }
+        };
+        let posts = loadPosts();
+        let activeCategory = "all";
+        let query = "";
+        let sortMode = "recent";
+        let selectedImage = "";
+        let selectedVideo = null;
+        let selectedVideoUrl = "";
+        const postVideoUrls = new Map();
+        let toastTimer;
+        const VIDEO_DB_NAME = "moyeo-anon-video-v1";
+        const openVideoDb = () => new Promise((resolve, reject) => {
+          const request = indexedDB.open(VIDEO_DB_NAME, 1);
+          request.onupgradeneeded = () => {
+            if (!request.result.objectStoreNames.contains("videos")) request.result.createObjectStore("videos");
+          };
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+        const putVideo = async (id, blob) => {
+          const db = await openVideoDb();
+          await new Promise((resolve, reject) => {
+            const transaction = db.transaction("videos", "readwrite");
+            transaction.objectStore("videos").put(blob, id);
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+          });
+          db.close();
+        };
+        const getVideo = async (id) => {
+          const db = await openVideoDb();
+          const blob = await new Promise((resolve, reject) => {
+            const transaction = db.transaction("videos", "readonly");
+            const request = transaction.objectStore("videos").get(id);
+            request.onsuccess = () => resolve(request.result || null);
+            request.onerror = () => reject(request.error);
+          });
+          db.close();
+          return blob;
+        };
+        const deleteVideo = async (id) => {
+          const db = await openVideoDb();
+          await new Promise((resolve, reject) => {
+            const transaction = db.transaction("videos", "readwrite");
+            transaction.objectStore("videos").delete(id);
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+          });
+          db.close();
+        };
+        const save = () => {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+            return true;
+          } catch (error) {
+            console.error("커뮤니티 글을 저장하지 못했습니다.", error);
+            showToast("브라우저 저장 공간이 부족해 변경사항을 저장하지 못했어요. 더 작은 사진을 선택해 주세요.");
+            return false;
+          }
+        };
+        const showToast = (message) => {
+          const toast = $("#toast");
+          toast.textContent = message;
+          toast.classList.remove("hidden");
+          clearTimeout(toastTimer);
+          toastTimer = setTimeout(() => toast.classList.add("hidden"), 2800);
+        };
+        const applyTheme = (theme, persist = true) => {
+          const isDark = theme === "dark";
+          document.documentElement.dataset.theme = isDark ? "dark" : "light";
+          $("#theme-toggle").textContent = isDark ? "☀" : "☾";
+          $("#theme-toggle").setAttribute("aria-label", isDark ? "라이트 모드 켜기" : "다크 모드 켜기");
+          $("#theme-toggle").title = isDark ? "라이트 모드 켜기" : "다크 모드 켜기";
+          $('meta[name="theme-color"]').setAttribute("content", isDark ? "#0d0c18" : "#f6f7fb");
+          if (persist) {
+            try {
+              localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+            } catch (error) {
+              console.error("화면 테마를 저장하지 못했습니다.", error);
+              showToast("테마 설정을 저장하지 못했어요.");
+            }
+          }
+        };
+        const timeAgo = (timestamp) => {
+          const minutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
+          if (minutes < 1) return "방금 전";
+          if (minutes < 60) return `${minutes}분 전`;
+          const hours = Math.floor(minutes / 60);
+          if (hours < 24) return `${hours}시간 전`;
+          const days = Math.floor(hours / 24);
+          return days < 7 ? `${days}일 전` : new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric" }).format(timestamp);
+        };
+        const visiblePosts = () => {
+          const normalized = query.trim().toLocaleLowerCase("ko");
+          const filtered = posts.filter((post) =>
+            (activeCategory === "all" || post.category === activeCategory) &&
+            (!normalized || `${post.title} ${post.body} ${categoryName(post.category)}`.toLocaleLowerCase("ko").includes(normalized)),
+          );
+          return filtered.sort((a, b) => sortMode === "popular" ? b.likes - a.likes || b.createdAt - a.createdAt : b.createdAt - a.createdAt);
+        };
+        const renderCategories = () => {
+          const nav = $("#categories");
+          nav.replaceChildren();
+          const counts = Object.fromEntries(CATEGORIES.map((category) => [category.id, category.id === "all" ? posts.length : posts.filter((post) => post.category === category.id).length]));
+          for (const category of CATEGORIES) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = `category-link${activeCategory === category.id ? " active" : ""}`;
+            button.innerHTML = `<span class="category-emoji" aria-hidden="true">${category.icon}</span><span>${esc(category.name)}</span><span class="nav-count">${counts[category.id]}</span>`;
+            button.addEventListener("click", () => {
+              activeCategory = category.id;
+              $("#feed-title").textContent = category.name;
+              renderCategories();
+              renderFeed();
+            });
+            nav.append(button);
+          }
+        };
+        const renderTrending = () => {
+          const popular = [...posts].sort((a, b) => b.likes - a.likes).slice(0, 3);
+          const trending = $("#trending");
+          trending.replaceChildren();
+          if (!popular.length) {
+            trending.textContent = "아직 인기 이야기가 없어요.";
+            return;
+          }
+          popular.forEach((post, index) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "trend";
+            button.innerHTML = `<div class="trend-label">TODAY · ${index + 1}</div><div class="trend-title">${esc(post.title)}</div>`;
+            button.addEventListener("click", () => {
+              activeCategory = "all";
+              query = "";
+              $("#search").value = "";
+              sortMode = "popular";
+              $("#sort-select").value = "popular";
+              $("#feed-title").textContent = "전체 이야기";
+              renderCategories();
+              renderFeed();
+              document.getElementById(`post-${CSS.escape(post.id)}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+            });
+            trending.append(button);
+          });
+        };
+        const renderTags = () => {
+          const popular = ["일상", "고민", "취미", "추천", "질문"];
+          const tags = $("#popular-tags");
+          tags.replaceChildren();
+          popular.forEach((tag) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "tag";
+            button.textContent = `#${tag}`;
+            button.addEventListener("click", () => {
+              $("#search").value = tag;
+              query = tag;
+              renderFeed();
+            });
+            tags.append(button);
+          });
+        };
+        const renderAccountButton = () => {
+          const button = $("#account-button");
+          if (currentUser) {
+            button.innerHTML = `${esc(currentUser.nickname)}${currentUser.isAdmin ? '<span class="admin-badge">관리자</span>' : ""}`;
+            button.classList.add("logged-in");
+            button.title = currentUser.isAdmin ? "관리자 계정 로그아웃" : "로그아웃";
+          } else {
+            button.textContent = "로그인";
+            button.classList.remove("logged-in");
+            button.title = "회원가입 또는 로그인";
+          }
+        };
+        const renderFeed = () => {
+          const feed = $("#feed");
+          postVideoUrls.forEach((url) => URL.revokeObjectURL(url));
+          postVideoUrls.clear();
+          feed.replaceChildren();
+          const results = visiblePosts();
+          if (!results.length) {
+            const empty = document.createElement("div");
+            empty.className = "empty";
+            empty.innerHTML = "<strong>아직 이야기가 없어요</strong>첫 이야기를 익명으로 남겨보세요.";
+            feed.append(empty);
+            return;
+          }
+          for (const post of results) {
+            const article = document.createElement("article");
+            article.className = "post";
+            article.id = `post-${post.id}`;
+            const comments = post.comments.map((comment) => `<div class="comment"><span class="comment-mark" aria-hidden="true">↳</span><div class="comment-body"><strong>익명</strong>${esc(comment.body)}</div></div>`).join("");
+            article.innerHTML = `
+              <div class="post-top">
+                <span class="post-avatar" aria-hidden="true">☻</span>
+                <div><div class="post-author">${esc(post.nickname || "익명")}${post.nickname === ADMIN_ID ? '<span class="admin-badge">관리자</span>' : ""}</div><div class="post-time">${timeAgo(post.createdAt)}</div></div>
+                <button class="post-menu" type="button" data-action="${post.authorId === ownerId || currentUser?.isAdmin ? "delete" : "report"}" data-id="${esc(post.id)}" aria-label="${post.authorId === ownerId || currentUser?.isAdmin ? "게시글 삭제" : "게시글 신고"}">${post.authorId === ownerId || currentUser?.isAdmin ? "삭제" : "···"}</button>
+              </div>
+              <span class="post-category">${esc(categoryName(post.category))}</span>
+              <h2>${esc(post.title)}</h2>
+              ${post.image ? `<img class="post-image" src="${esc(post.image)}" alt="게시글에 첨부된 사진" />` : ""}
+              ${post.videoId ? `<video class="post-video" data-video-id="${esc(post.videoId)}" controls preload="metadata"></video>` : ""}
+              <p class="post-body">${esc(post.body)}</p>
+              <div class="post-actions">
+                <button class="action-button${post.liked ? " liked" : ""}" type="button" data-action="like" data-id="${esc(post.id)}" aria-pressed="${post.liked}"><span aria-hidden="true">${post.liked ? "♥" : "♡"}</span> 공감 ${post.likes}</button>
+                <button class="action-button" type="button" data-action="comment" data-id="${esc(post.id)}"><span aria-hidden="true">▤</span> 댓글 ${post.comments.length}</button>
+                <span class="action-spacer"></span>
+                <button class="action-button" type="button" data-action="share" data-id="${esc(post.id)}">↗ 공유</button>
+              </div>
+              <section class="comments hidden" id="comments-${esc(post.id)}" aria-label="댓글">${comments}
+                <form class="reply-form" data-post-id="${esc(post.id)}"><label class="sr-only" for="reply-${esc(post.id)}">댓글 작성</label><input id="reply-${esc(post.id)}" maxlength="500" required placeholder="익명으로 댓글 남기기" /><button class="primary" type="submit">등록</button></form>
+              </section>`;
+            feed.append(article);
+          }
+          feed.querySelectorAll("video[data-video-id]").forEach(async (video) => {
+            try {
+              const blob = await getVideo(video.dataset.videoId);
+              if (!blob) return;
+              const url = URL.createObjectURL(blob);
+              postVideoUrls.set(video.dataset.videoId, url);
+              video.src = url;
+            } catch (error) {
+              console.error("게시글 동영상을 불러오지 못했습니다.", error);
+            }
+          });
+        };
+        const render = () => {
+          renderCategories();
+          renderFeed();
+          renderTrending();
+          renderTags();
+        };
+        const openModal = () => {
+          const select = $("#post-category");
+          select.replaceChildren();
+          CATEGORIES.filter((category) => category.id !== "all").forEach((category) => {
+            const option = document.createElement("option");
+            option.value = category.id;
+            option.textContent = category.name;
+            select.append(option);
+          });
+          select.value = activeCategory === "all" ? "daily" : activeCategory;
+          $("#post-modal").classList.remove("hidden");
+          $("#post-title").focus();
+        };
+        const closeModal = () => {
+          $("#post-modal").classList.add("hidden");
+          $("#post-form").reset();
+          selectedImage = "";
+          selectedVideo = null;
+          if (selectedVideoUrl) URL.revokeObjectURL(selectedVideoUrl);
+          selectedVideoUrl = "";
+          $("#image-preview").classList.add("hidden");
+          $("#image-picker").classList.remove("hidden");
+          $("#video-preview").classList.add("hidden");
+          $("#video-preview-source").removeAttribute("src");
+          $("#video-picker").classList.remove("hidden");
+        };
+        const compressImage = (file) => new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = () => reject(new Error("이미지를 읽지 못했습니다."));
+          reader.onload = () => {
+            const image = new Image();
+            image.onerror = () => reject(new Error("지원하지 않는 이미지입니다."));
+            image.onload = () => {
+              const maxSide = 1200;
+              const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+              const canvas = document.createElement("canvas");
+              canvas.width = Math.max(1, Math.round(image.width * scale));
+              canvas.height = Math.max(1, Math.round(image.height * scale));
+              canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+              resolve(canvas.toDataURL("image/jpeg", 0.78));
+            };
+            image.src = reader.result;
+          };
+          reader.readAsDataURL(file);
+        });
+        const addPost = (event) => {
+          event.preventDefault();
+          const title = $("#post-title").value.trim();
+          const body = $("#post-body").value.trim();
+          const category = $("#post-category").value;
+          if (!title || !body || title.length > 80 || body.length > 2000) {
+            showToast("제목과 내용을 확인해 주세요.");
+            return;
+          }
+          const postId = `post-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          const videoId = selectedVideo ? `${postId}-video` : "";
+          posts.unshift({ id: postId, authorId: ownerId, nickname: currentUser?.nickname || "", category, title, body, image: selectedImage, videoId, createdAt: Date.now(), likes: 0, comments: [], liked: false });
+          if (!save()) {
+            posts.shift();
+            return;
+          }
+          if (selectedVideo) {
+            putVideo(videoId, selectedVideo).catch((error) => {
+              console.error("동영상을 저장하지 못했습니다.", error);
+              showToast("동영상 저장에 실패했어요.");
+            });
+          }
+          activeCategory = "all";
+          query = "";
+          $("#search").value = "";
+          $("#feed-title").textContent = "전체 이야기";
+          closeModal();
+          render();
+          showToast("익명으로 이야기를 등록했어요. (이 브라우저에서만 보여요)");
+        };
+        $("#new-post").addEventListener("click", openModal);
+        $("#new-post-top").addEventListener("click", openModal);
+        $("#theme-toggle").addEventListener("click", () => {
+          applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+        });        const openAuthModal = () => {
+          $("#auth-modal").classList.remove("hidden");
+          $("#auth-name").focus();
+        };
+        const closeAuthModal = () => {
+          $("#auth-modal").classList.add("hidden");
+          $("#auth-form").reset();
+        };
+        const setAuthMode = (mode) => {
+          authMode = mode;
+          $("#login-tab").classList.toggle("active", mode === "login");
+          $("#register-tab").classList.toggle("active", mode === "register");
+          $("#auth-nickname-field").classList.toggle("hidden", mode !== "register");
+          $("#auth-password").autocomplete = mode === "register" ? "new-password" : "current-password";
+          $("#auth-submit").textContent = mode === "register" ? "회원가입" : "로그인";
+        };
+        $("#account-button").addEventListener("click", () => {
+          if (currentUser) {
+            const label = currentUser.isAdmin ? "관리자 계정" : `${currentUser.nickname} 계정`;
+            if (!window.confirm(`${label}에서 로그아웃할까요?`)) return;
+            currentUser = null;
+            localStorage.removeItem(SESSION_KEY);
+            ownerId = getOwnerId();
+            renderAccountButton();
+            renderFeed();
+            showToast("로그아웃했어요.");
+          } else {
+            setAuthMode("login");
+            openAuthModal();
+          }
+        });
+        $("#login-tab").addEventListener("click", () => setAuthMode("login"));
+        $("#register-tab").addEventListener("click", () => setAuthMode("register"));
+        $("#close-auth-modal").addEventListener("click", closeAuthModal);
+        $("#auth-modal").addEventListener("click", (event) => { if (event.target === $("#auth-modal")) closeAuthModal(); });
+        $("#auth-form").addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const loginName = $("#auth-name").value.trim().toLocaleLowerCase("ko");
+          const nickname = $("#auth-nickname").value.trim();
+          const password = $("#auth-password").value;
+          if (loginName.length < 2 || password.length < 6) {
+            showToast("아이디는 2자 이상, 비밀번호는 6자 이상 입력해 주세요.");
+            return;
+          }
+          if (authMode === "login" && loginName === ADMIN_ID && password === ADMIN_PASSWORD) {
+            currentUser = { id: "admin-keaji1614", loginName: ADMIN_ID, nickname: ADMIN_ID, isAdmin: true };
+            ownerId = currentUser.id;
+            localStorage.setItem(SESSION_KEY, JSON.stringify({ admin: true }));
+            closeAuthModal();
+            renderAccountButton();
+            renderFeed();
+            showToast("관리자 계정으로 접속되었습니다.");
+            return;
+          }
+          const passwordHash = await hashPassword(password);
+          if (authMode === "register") {
+            if (loginName === ADMIN_ID) {
+              showToast("관리자 아이디는 회원가입으로 사용할 수 없어요.");
+              return;
+            }
+            if (users[loginName]) {
+              showToast("이미 사용 중인 아이디예요.");
+              return;
+            }
+            const displayName = nickname || loginName;
+            if (displayName.length > 20) {
+              showToast("표시 닉네임은 최대 20자예요.");
+              return;
+            }
+            const user = { id: `user-${crypto.randomUUID ? crypto.randomUUID() : Date.now()}`, loginName, nickname: displayName, passwordHash };
+            users[loginName] = user;
+            try {
+              localStorage.setItem(USERS_KEY, JSON.stringify(users));
+            } catch (error) {
+              showToast("회원 정보를 저장하지 못했어요.");
+              return;
+            }
+            currentUser = user;
+            localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: loginName }));
+            ownerId = user.id;
+            closeAuthModal();
+            renderAccountButton();
+            renderFeed();
+            showToast("회원가입과 로그인이 완료됐어요.");
+          } else {
+            const user = users[loginName];
+            if (!user || user.passwordHash !== passwordHash) {
+              showToast("아이디 또는 비밀번호가 일치하지 않아요.");
+              return;
+            }
+            currentUser = user;
+            localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: loginName }));
+            ownerId = user.id;
+            closeAuthModal();
+            renderAccountButton();
+            renderFeed();
+            showToast(`${user.nickname}님, 다시 만나서 반가워요.`);
+          }
+        });        $("#close-modal").addEventListener("click", closeModal);
+        $("#post-modal").addEventListener("click", (event) => { if (event.target === $("#post-modal")) closeModal(); });
+        $("#post-form").addEventListener("submit", addPost);
+        $("#post-image").addEventListener("change", async (event) => {
+          const file = event.target.files?.[0];
+          if (!file) return;
+          if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+            event.target.value = "";
+            showToast("JPG, PNG 또는 WEBP 사진만 선택할 수 있어요.");
+            return;
+          }
+          if (file.size > 5 * 1024 * 1024) {
+            event.target.value = "";
+            showToast("사진은 5MB 이하만 선택할 수 있어요.");
+            return;
+          }
+          try {
+            selectedImage = await compressImage(file);
+            $("#image-preview-source").src = selectedImage;
+            $("#image-preview").classList.remove("hidden");
+            $("#image-picker").classList.add("hidden");
+          } catch (error) {
+            console.error(error);
+            event.target.value = "";
+            selectedImage = "";
+            showToast("사진을 처리하지 못했어요.");
+          }
+        });
+        $("#post-video").addEventListener("change", (event) => {
+          const file = event.target.files?.[0];
+          if (!file) return;
+          if (!["video/mp4", "video/webm"].includes(file.type)) {
+            event.target.value = "";
+            showToast("MP4 또는 WEBM 동영상만 선택할 수 있어요.");
+            return;
+          }
+          if (file.size > 50 * 1024 * 1024) {
+            event.target.value = "";
+            showToast("동영상은 50MB 이하만 선택할 수 있어요.");
+            return;
+          }
+          if (selectedVideoUrl) URL.revokeObjectURL(selectedVideoUrl);
+          selectedVideo = file;
+          selectedVideoUrl = URL.createObjectURL(file);
+          $("#video-preview-source").src = selectedVideoUrl;
+          $("#video-preview").classList.remove("hidden");
+          $("#video-picker").classList.add("hidden");
+        });
+        $("#remove-video").addEventListener("click", () => {
+          selectedVideo = null;
+          $("#post-video").value = "";
+          if (selectedVideoUrl) URL.revokeObjectURL(selectedVideoUrl);
+          selectedVideoUrl = "";
+          $("#video-preview-source").removeAttribute("src");
+          $("#video-preview").classList.add("hidden");
+          $("#video-picker").classList.remove("hidden");
+        });
+        $("#remove-image").addEventListener("click", () => {
+          selectedImage = "";
+          $("#post-image").value = "";
+          $("#image-preview-source").removeAttribute("src");
+          $("#image-preview").classList.add("hidden");
+          $("#image-picker").classList.remove("hidden");
+        });
+        $("#search").addEventListener("input", (event) => { query = event.target.value; renderFeed(); });
+        $("#sort-select").addEventListener("change", (event) => { sortMode = event.target.value; renderFeed(); });
+        document.addEventListener("keydown", (event) => {
+          if (event.key !== "Escape") return;
+          if (!$("#post-modal").classList.contains("hidden")) closeModal();
+          if (!$("#auth-modal").classList.contains("hidden")) closeAuthModal();
+        });
+        $("#feed").addEventListener("click", async (event) => {
+          const button = event.target.closest("button[data-action]");
+          if (!button) return;
+          const post = posts.find((item) => item.id === button.dataset.id);
+          if (!post) return;
+          if (button.dataset.action === "like") {
+            post.liked = !post.liked;
+            post.likes = Math.max(0, post.likes + (post.liked ? 1 : -1));
+            save();
+            render();
+          } else if (button.dataset.action === "comment") {
+            const comments = $(`#comments-${CSS.escape(post.id)}`);
+            comments.classList.toggle("hidden");
+            if (!comments.classList.contains("hidden")) comments.querySelector("input")?.focus();
+          } else if (button.dataset.action === "report") {
+            if (window.confirm("이 게시글을 신고할까요? 신고 내용은 이 브라우저에서만 기록되지 않습니다.")) {
+              showToast("신고 기능은 데모에서 접수되지 않아요. 불편한 글은 브라우저를 닫아주세요.");
+            }
+          } else if (button.dataset.action === "delete") {
+            if (post.authorId !== ownerId && !currentUser?.isAdmin) {
+              showToast("작성자 또는 관리자만 게시글을 삭제할 수 있어요.");
+              return;
+            }
+            if (!window.confirm("이 게시글을 삭제할까요? 댓글도 함께 삭제됩니다.")) return;
+            posts = posts.filter((item) => item.id !== post.id);
+            if (post.videoId) deleteVideo(post.videoId).catch((error) => console.error("동영상 삭제에 실패했습니다.", error));
+            save();
+            render();
+            showToast("내 게시글을 삭제했어요.");
+          } else if (button.dataset.action === "share") {
+            const text = `${post.title}\n${post.body}`;
+            try {
+              if (navigator.share) await navigator.share({ title: "모여 익명 라운지", text });
+              else if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(text);
+                showToast("게시글 내용을 복사했어요.");
+              } else throw new Error("공유 기능을 사용할 수 없습니다.");
+            } catch (error) {
+              if (error?.name !== "AbortError") {
+                console.error("게시글 공유에 실패했습니다.", error);
+                showToast("공유하지 못했어요. 브라우저 권한을 확인해 주세요.");
+              }
+            }
+          }
+        });
+        $("#feed").addEventListener("submit", (event) => {
+          if (!event.target.matches(".reply-form")) return;
+          event.preventDefault();
+          const post = posts.find((item) => item.id === event.target.dataset.postId);
+          const input = event.target.querySelector("input");
+          const body = input.value.trim();
+          if (!post || !body) return;
+          post.comments.push({ id: `comment-${Date.now()}`, body, createdAt: Date.now() });
+          save();
+          renderFeed();
+          $(`#comments-${CSS.escape(post.id)}`).classList.remove("hidden");
+          showToast("댓글을 익명으로 등록했어요.");
+        });
+        applyTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light", false);
+        renderAccountButton();
+        render();
+      })();
+    </script>
+  </body>
+</html>
