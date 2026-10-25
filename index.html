@@ -304,7 +304,7 @@
           <span class="brand-name">모여<span>.</span></span>
         </a>
         <div class="topbar-right">
-          <span class="privacy-pill"><span aria-hidden="true">●</span> 오늘 하루는 어떤가요?</span>
+          <span class="privacy-pill"><span aria-hidden="true">●</span> 오늘 하루는 어땠나요?</span>
           <button class="account-button" id="account-button" type="button">로그인</button>
           <button class="icon-button theme-toggle" id="theme-toggle" type="button" aria-label="다크 모드 켜기" title="다크 모드 켜기">☾</button>
           <button class="icon-button" id="new-post-top" type="button" aria-label="글쓰기">✎</button>
@@ -379,7 +379,7 @@
         <form id="auth-form">
           <div class="field"><label for="auth-name">아이디 또는 닉네임</label><input id="auth-name" minlength="2" maxlength="20" required autocomplete="username" placeholder="2~20자" /></div>
           <div class="field hidden" id="auth-nickname-field"><label for="auth-nickname">표시 닉네임</label><input id="auth-nickname" maxlength="20" autocomplete="nickname" placeholder="게시글에 표시될 이름" /></div>
-          <div class="field"><label for="auth-password">비밀번호</label><input id="auth-password" minlength="6" maxlength="64" required type="password" autocomplete="current-password" placeholder="6자 이상" /><span class="field-hint">이 데모의 계정 정보는 현재 브라우저에만 저장됩니다.</span></div>
+          <div class="field"><label for="auth-password">비밀번호</label><input id="auth-password" minlength="6" maxlength="64" required type="password" autocomplete="current-password" placeholder="6자 이상" /><span class="field-hint">계정 정보는 서버 데이터베이스에 안전하게 저장됩니다.</span></div>
           <div class="auth-actions"><button class="primary" id="auth-submit" type="submit">로그인</button></div>
         </form>
       </section>
@@ -392,10 +392,8 @@
         const OWNER_KEY = "moyeo-anon-community-owner-v1";
         const MIGRATION_KEY = "moyeo-anon-community-d1-migrated-v1";
         const THEME_KEY = "moyeo-anon-theme-v1";
-        const USERS_KEY = "moyeo-anon-users-v1";
         const SESSION_KEY = "moyeo-anon-session-v1";
         const ADMIN_ID = "keaji1614";
-        const ADMIN_PASSWORD = "031026ok@";
         const CATEGORIES = [
           { id: "all", name: "전체 이야기", icon: "✦" },
           { id: "daily", name: "일상", icon: "☀️" },
@@ -435,27 +433,12 @@
         let ownerId = getOwnerId();
         let authMode = "login";
         let currentUser = null;
-        const loadJson = (key, fallback) => {
-          try {
-            const value = JSON.parse(localStorage.getItem(key));
-            return value ?? fallback;
-          } catch (error) {
-            return fallback;
-          }
-        };
-        const users = loadJson(USERS_KEY, {});
-        const session = loadJson(SESSION_KEY, null);
-        if (session?.admin) {
-          currentUser = { id: "admin-keaji1614", loginName: ADMIN_ID, nickname: "keaji1614", isAdmin: true };
-        } else if (session?.userId && users[session.userId]) {
-          currentUser = users[session.userId];
+        let authToken = "";
+        try {
+          authToken = localStorage.getItem(SESSION_KEY) || "";
+        } catch (error) {
+          console.error("로그인 세션을 불러오지 못했습니다.", error);
         }
-        if (currentUser) ownerId = currentUser.id;
-        const hashPassword = async (password) => {
-          const bytes = new TextEncoder().encode(password);
-          const digest = await crypto.subtle.digest("SHA-256", bytes);
-          return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-        };
         const loadPosts = () => {
           try {
             const raw = localStorage.getItem(STORAGE_KEY);
@@ -545,7 +528,11 @@
         const requestPostsApi = async (path = "", options = {}) => {
           const response = await fetch(`/api/posts${path}`, {
             ...options,
-            headers: { "content-type": "application/json", ...options.headers },
+            headers: {
+              "content-type": "application/json",
+              ...(authToken ? { authorization: `Bearer ${authToken}` } : {}),
+              ...options.headers,
+            },
           });
           let data;
           try {
@@ -555,6 +542,49 @@
           }
           if (!response.ok) throw new Error(data.error || "공유 서버 요청에 실패했습니다.");
           return data;
+        };
+        const requestAuthApi = async (path, options = {}) => {
+          const response = await fetch(`/api/auth/${path}`, {
+            ...options,
+            headers: {
+              "content-type": "application/json",
+              ...(authToken ? { authorization: `Bearer ${authToken}` } : {}),
+              ...options.headers,
+            },
+          });
+          let data;
+          try {
+            data = await response.json();
+          } catch {
+            throw new Error("인증 서버에서 올바른 응답을 받지 못했습니다.");
+          }
+          if (!response.ok) throw new Error(data.error || "인증 서버 요청에 실패했습니다.");
+          return data;
+        };
+        const applyIdentity = (user) => {
+          currentUser = user.isAnonymous ? null : user;
+          ownerId = user.id;
+          renderAccountButton();
+          renderFeed();
+        };
+        const persistSession = (session) => {
+          authToken = session.token;
+          localStorage.setItem(SESSION_KEY, authToken);
+          applyIdentity(session.user);
+        };
+        const initializeIdentity = async () => {
+          if (authToken) {
+            try {
+              const session = await requestAuthApi("session");
+              applyIdentity(session.user);
+              return;
+            } catch (error) {
+              console.error("저장된 로그인 세션이 만료되어 다시 연결합니다.", error);
+              authToken = "";
+              localStorage.removeItem(SESSION_KEY);
+            }
+          }
+          persistSession(await requestAuthApi("anonymous", { method: "POST" }));
         };
         const syncSharedPosts = async () => {
           try {
@@ -733,7 +763,7 @@
               <div class="post-top">
                 <span class="post-avatar" aria-hidden="true">☻</span>
                 <div><div class="post-author">${esc(post.nickname || "익명")}${post.nickname === ADMIN_ID ? '<span class="admin-badge">관리자</span>' : ""}</div><div class="post-time">${timeAgo(post.createdAt)}</div></div>
-                <button class="post-menu" type="button" data-action="${post.authorId === ownerId ? "delete" : "report"}" data-id="${esc(post.id)}" aria-label="${post.authorId === ownerId ? "게시글 삭제" : "게시글 신고"}">${post.authorId === ownerId ? "삭제" : "···"}</button>
+                <button class="post-menu" type="button" data-action="${post.authorId === ownerId || currentUser?.isAdmin ? "delete" : "report"}" data-id="${esc(post.id)}" aria-label="${post.authorId === ownerId || currentUser?.isAdmin ? "게시글 삭제" : "게시글 신고"}">${post.authorId === ownerId || currentUser?.isAdmin ? "삭제" : "···"}</button>
               </div>
               <span class="post-category">${esc(categoryName(post.category))}</span>
               <h2>${esc(post.title)}</h2>
@@ -858,7 +888,8 @@
         $("#new-post-top").addEventListener("click", openModal);
         $("#theme-toggle").addEventListener("click", () => {
           applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
-        });        const openAuthModal = () => {
+        });
+        const openAuthModal = () => {
           $("#auth-modal").classList.remove("hidden");
           $("#auth-name").focus();
         };
@@ -874,16 +905,20 @@
           $("#auth-password").autocomplete = mode === "register" ? "new-password" : "current-password";
           $("#auth-submit").textContent = mode === "register" ? "회원가입" : "로그인";
         };
-        $("#account-button").addEventListener("click", () => {
+        $("#account-button").addEventListener("click", async () => {
           if (currentUser) {
             const label = currentUser.isAdmin ? "관리자 계정" : `${currentUser.nickname} 계정`;
             if (!window.confirm(`${label}에서 로그아웃할까요?`)) return;
-            currentUser = null;
-            localStorage.removeItem(SESSION_KEY);
-            ownerId = getOwnerId();
-            renderAccountButton();
-            renderFeed();
-            showToast("로그아웃했어요.");
+            try {
+              await requestAuthApi("session", { method: "DELETE" });
+              authToken = "";
+              localStorage.removeItem(SESSION_KEY);
+              persistSession(await requestAuthApi("anonymous", { method: "POST" }));
+              showToast("로그아웃했어요.");
+            } catch (error) {
+              console.error("로그아웃하지 못했습니다.", error);
+              showToast(`로그아웃하지 못했어요. ${error.message}`);
+            }
           } else {
             setAuthMode("login");
             openAuthModal();
@@ -902,61 +937,32 @@
             showToast("아이디는 2자 이상, 비밀번호는 6자 이상 입력해 주세요.");
             return;
           }
-          if (authMode === "login" && loginName === ADMIN_ID && password === ADMIN_PASSWORD) {
-            currentUser = { id: "admin-keaji1614", loginName: ADMIN_ID, nickname: ADMIN_ID, isAdmin: true };
-            ownerId = currentUser.id;
-            localStorage.setItem(SESSION_KEY, JSON.stringify({ admin: true }));
-            closeAuthModal();
-            renderAccountButton();
-            renderFeed();
-            showToast("관리자 계정으로 접속되었습니다.");
+          if (authMode === "register" && nickname.length > 20) {
+            showToast("표시 닉네임은 최대 20자예요.");
             return;
           }
-          const passwordHash = await hashPassword(password);
-          if (authMode === "register") {
-            if (loginName === ADMIN_ID) {
-              showToast("관리자 아이디는 회원가입으로 사용할 수 없어요.");
-              return;
-            }
-            if (users[loginName]) {
-              showToast("이미 사용 중인 아이디예요.");
-              return;
-            }
-            const displayName = nickname || loginName;
-            if (displayName.length > 20) {
-              showToast("표시 닉네임은 최대 20자예요.");
-              return;
-            }
-            const user = { id: `user-${crypto.randomUUID ? crypto.randomUUID() : Date.now()}`, loginName, nickname: displayName, passwordHash };
-            users[loginName] = user;
-            try {
-              localStorage.setItem(USERS_KEY, JSON.stringify(users));
-            } catch (error) {
-              showToast("회원 정보를 저장하지 못했어요.");
-              return;
-            }
-            currentUser = user;
-            localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: loginName }));
-            ownerId = user.id;
+          try {
+            const session = await requestAuthApi(authMode === "register" ? "register" : "login", {
+              method: "POST",
+              body: JSON.stringify({
+                loginName,
+                password,
+                ...(authMode === "register" ? { nickname } : {}),
+              }),
+            });
+            persistSession(session);
             closeAuthModal();
-            renderAccountButton();
-            renderFeed();
-            showToast("회원가입과 로그인이 완료됐어요.");
-          } else {
-            const user = users[loginName];
-            if (!user || user.passwordHash !== passwordHash) {
-              showToast("아이디 또는 비밀번호가 일치하지 않아요.");
-              return;
-            }
-            currentUser = user;
-            localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: loginName }));
-            ownerId = user.id;
-            closeAuthModal();
-            renderAccountButton();
-            renderFeed();
-            showToast(`${user.nickname}님, 다시 만나서 반가워요.`);
+            showToast(session.user.isAdmin
+              ? "관리자 계정으로 접속되었습니다."
+              : authMode === "register"
+                ? "회원가입과 로그인이 완료됐어요."
+                : `${session.user.nickname}님, 다시 만나서 반가워요.`);
+          } catch (error) {
+            console.error("계정 요청을 처리하지 못했습니다.", error);
+            showToast(error.message);
           }
-        });        $("#close-modal").addEventListener("click", closeModal);
+        });
+        $("#close-modal").addEventListener("click", closeModal);
         $("#post-modal").addEventListener("click", (event) => { if (event.target === $("#post-modal")) closeModal(); });
         $("#post-form").addEventListener("submit", addPost);
         $("#post-image").addEventListener("change", async (event) => {
@@ -1065,7 +1071,6 @@
             try {
               await requestPostsApi(`/${encodeURIComponent(post.id)}`, {
                 method: "DELETE",
-                body: JSON.stringify({ authorId: ownerId }),
               });
             } catch (error) {
               console.error("게시글을 공유 서버에서 삭제하지 못했습니다.", error);
@@ -1120,7 +1125,12 @@
         applyTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light", false);
         renderAccountButton();
         render();
-        syncSharedPosts();
+        initializeIdentity()
+          .then(syncSharedPosts)
+          .catch((error) => {
+            console.error("공유 서비스에 연결하지 못했습니다.", error);
+            showToast(`서버에 연결하지 못했어요. ${error.message}`);
+          });
       })();
     </script>
   </body>
