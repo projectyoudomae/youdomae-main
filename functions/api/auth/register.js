@@ -11,7 +11,7 @@ export const onRequestPost = async (context) => {
   if (bodyError) return bodyError;
   if (!validateCredentials(value)) return json({ error: "아이디 또는 비밀번호를 확인해 주세요." }, 400);
 
-  const loginName = value.loginName.toLocaleLowerCase("ko");
+  const loginName = value.loginName.toLowerCase();
   if (loginName === ADMIN_LOGIN_NAME) {
     return json({ error: "관리자 아이디는 회원가입할 수 없습니다." }, 409);
   }

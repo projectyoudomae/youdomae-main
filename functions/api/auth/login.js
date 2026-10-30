@@ -16,7 +16,7 @@ export const onRequestPost = async (context) => {
   if (bodyError) return bodyError;
   if (!validateCredentials(value)) return json({ error: "아이디 또는 비밀번호를 확인해 주세요." }, 400);
 
-  const loginName = value.loginName.toLocaleLowerCase("ko");
+  const loginName = value.loginName.toLowerCase();
   let user = await db.prepare("SELECT * FROM users WHERE login_name = ?").bind(loginName).first();
   if (!user && loginName === ADMIN_LOGIN_NAME) {
     if (!context.env.ADMIN_PASSWORD) {
