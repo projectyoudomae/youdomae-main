@@ -1,7 +1,7 @@
 import { json } from "../../lib/posts.js";
 
 const SESSION_DAYS = 30;
-const PASSWORD_ITERATIONS = 210_000;
+const PASSWORD_ITERATIONS = 100_000;
 const ADMIN_ID = "keaji1614";
 
 const toHex = (bytes) =>
