@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS posts (
   id TEXT PRIMARY KEY,
   author_id TEXT NOT NULL,
   nickname TEXT NOT NULL DEFAULT '',
-  category TEXT NOT NULL CHECK (category IN ('daily', 'heart', 'question', 'hobby', 'career', 'free')),
+  category TEXT NOT NULL CHECK (category IN ('daily', 'conversation', 'heart', 'question', 'hobby', 'career', 'free')),
   title TEXT NOT NULL CHECK (length(title) BETWEEN 1 AND 80),
   body TEXT NOT NULL CHECK (length(body) BETWEEN 1 AND 2000),
   image TEXT NOT NULL DEFAULT '',
