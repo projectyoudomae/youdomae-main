@@ -1177,7 +1177,7 @@
               showToast("신고 기능은 데모에서 접수되지 않아요. 불편한 글은 브라우저를 닫아주세요.");
             }
           } else if (button.dataset.action === "delete") {
-            if (post.authorId !== ownerId) {
+            if (post.authorId !== ownerId && !currentUser?.isAdmin) {
               showToast("작성자 또는 관리자만 게시글을 삭제할 수 있어요.");
               return;
             }
@@ -1195,7 +1195,7 @@
             if (post.videoId) deleteVideo(post.videoId).catch((error) => console.error("동영상 삭제에 실패했습니다.", error));
             save();
             render();
-            showToast("내 게시글을 삭제했어요.");
+            showToast("게시글을 삭제했어요.");
           } else if (button.dataset.action === "share") {
             const text = `${post.title}\n${post.body}`;
             try {
