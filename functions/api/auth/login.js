@@ -44,6 +44,11 @@ export const onRequestPost = async (context) => {
     return json({ error: "아이디 또는 비밀번호가 일치하지 않습니다." }, 401);
   }
 
+  if (loginName === ADMIN_LOGIN_NAME && !user.is_admin) {
+    await db.prepare("UPDATE users SET is_admin = 1 WHERE id = ?").bind(user.id).run();
+    user.is_admin = 1;
+  }
+
   return json(await createSession(db, user));
 };
 
