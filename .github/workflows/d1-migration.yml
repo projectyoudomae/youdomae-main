@@ -2,11 +2,6 @@ name: Migrate Cloudflare D1
 
 on:
   workflow_dispatch:
-    inputs:
-      database_name:
-        description: D1 database name bound as DB in the Pages project
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -20,9 +15,7 @@ jobs:
 
       - name: Apply conversation category migration
         uses: cloudflare/wrangler-action@v4
-        env:
-          D1_DATABASE_NAME: ${{ inputs.database_name }}
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: d1 execute "$D1_DATABASE_NAME" --remote --file=./migrations/0001_add_conversation_category.sql
+          command: d1 execute youdomae-db --remote --file=./migrations/0001_add_conversation_category.sql
